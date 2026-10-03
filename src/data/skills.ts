@@ -24,13 +24,7 @@ export interface SkillGroup {
 export const primaryFocus = {
   label: 'Full-Stack Development',
   description:
-    'Interfaces, APIs and the databases behind them, built as one system so the pieces agree with each other.',
-  /** The layers of the stack, with the skills that cover each. */
-  layers: [
-    { label: 'Interface', skills: ['React', 'Astro', 'TypeScript', 'Tailwind CSS'] },
-    { label: 'API', skills: ['Node.js', 'REST API'] },
-    { label: 'Data', skills: ['PostgreSQL', 'MySQL'] },
-  ],
+    'Web, mobile, APIs, and relational databases.',
 };
 
 export const skillGroups: SkillGroup[] = [

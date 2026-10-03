@@ -13,7 +13,7 @@ export const site = {
     program: 'Computer Science',
   },
   tagline:
-    'Building practical software through full-stack development, thoughtful system design, and technology-driven problem solving.',
+    'I build web and mobile apps that make everyday work simpler.',
   /**
    * Profile photo shown in the hero. Drop the file at public/images/profile.jpg
    * (any path under public/ works). Until the file exists, a placeholder frame is shown.
@@ -38,7 +38,7 @@ export const site = {
    * marked dashed "to be added" slots. Set to false to hide them entirely
    * once the site is public and you'd rather show nothing than a placeholder.
    */
-  showPlaceholders: true,
+  showPlaceholders: false,
 
   copyrightYear: 2026,
 } as const;

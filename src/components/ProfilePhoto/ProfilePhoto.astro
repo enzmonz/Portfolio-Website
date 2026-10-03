@@ -1,7 +1,7 @@
 ---
 /**
  * Hero portrait in a pixel-cornered frame with an offset outline, soft glow,
- * status tag and a subtle pointer tilt.
+ * a subtle pointer tilt.
  *
  * The image is read from `site.profilePhoto.src` (a file under public/).
  */
@@ -26,15 +26,6 @@ const { src, alt } = site.profilePhoto;
   <span class="px px-tr" aria-hidden="true"></span>
   <span class="px px-bl" aria-hidden="true"></span>
   <span class="px px-br" aria-hidden="true"></span>
-  {
-    site.availability && (
-      <figcaption class="photo-tag">
-        <span class="live-dot" aria-hidden="true" />
-        <span>Available</span>
-        <span class="sr-only">: {site.availability}</span>
-      </figcaption>
-    )
-  }
 </figure>
 
 <style>
@@ -145,34 +136,6 @@ const { src, alt } = site.profilePhoto;
   .px-br::after {
     right: var(--px);
     bottom: var(--px);
-  }
-
-  .photo-tag {
-    position: absolute;
-    right: 1.25rem;
-    bottom: -1.0625rem;
-    z-index: 3;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    height: 2.125rem;
-    padding-inline: 0.875rem;
-    border-radius: 999px;
-    border: 1px solid var(--accent-line);
-    background: color-mix(in oklab, var(--bg) 82%, transparent);
-    backdrop-filter: blur(8px);
-    font-family: var(--font-pixel);
-    font-size: 0.8125rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--accent-text);
-    white-space: nowrap;
-  }
-
-  @keyframes photo-scan {
-    to {
-      top: 110%;
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {

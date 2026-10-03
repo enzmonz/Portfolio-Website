@@ -38,11 +38,10 @@ export const experience: ExperienceEntry[] = [
     status: 'Current',
     period: 'Sep 2026 — Present · Remote',
     summary:
-      'As an Associate Founder of Cinnabyte, I lead the design and development of custom software solutions, turning complex ideas into functional, production-ready systems. My work bridges full-stack engineering, system architecture, and intuitive UI/UX design, driven by start-up leadership and co-creation.',
+      'Co-creating products and guiding technical decisions at a software startup.',
     details: [
-      'Product development: building e-commerce platforms, SaaS dashboards, and mobile booking applications from the ground up.',
-      'System architecture: designing reliable REST API infrastructure and mapping out legacy system modernizations.',
-      'Business solutions: creating internal operations tools designed to streamline daily workflows and improve business efficiency.',
+      'Building storefronts, internal tools, and mobile booking apps.',
+      'Designing REST APIs and planning legacy system modernization.',
     ],
     tech: ['React', 'React Native', 'TypeScript', 'Node.js', 'PostgreSQL', 'Astro'],
     projects: ['cinnabytehq', 'sellbytes', 'mobile-booking'],
@@ -70,11 +69,10 @@ export const experience: ExperienceEntry[] = [
     status: 'Former',
     period: 'Jul 2026 — Sep 2026 · Remote',
     summary:
-      'Contributed to the development of scalable enterprise applications by writing clean, maintainable Java code, working closely with senior engineers to troubleshoot and deploy reliable software solutions.',
+      'Supported enterprise application development alongside senior engineers.',
     details: [
-      'Wrote clean, maintainable Java code for enterprise applications.',
-      'Integrated Python-based tools to automate data processing pipelines and routine operational tasks.',
-      'Worked with senior engineers to troubleshoot and deploy software solutions.',
+      'Wrote Java code and helped troubleshoot and deploy applications.',
+      'Automated data processing and routine tasks with Python.',
     ],
     tech: ['Java', 'Python'],
     monogram: 'VT',

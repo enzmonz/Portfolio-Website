@@ -2,20 +2,17 @@
 /**
  * Chapter 04, the e-commerce platform (presentation: 'storefront').
  *
- * lg+:  [ numeral · partial note ][ title, story, stack, actions ]
+ * lg+:  [ numeral ][ title, stack, actions ]
  *       [ storefront composition, side windows bleeding outward ]
- *       [ commerce flow ··································· ]
- * Below lg: title → composition + flow → note → text.
+ * Below lg: title → composition → status and links.
  *
- * Hover over the composition or the flow (visual only, mouse): the screens
- * shift by depth, a decorative cart badge bumps from 0 to 1, and the flow
- * steps light up in order. The partial-payments note is always visible.
+ * Hover over the composition (visual only, mouse): the screens shift by
+ * depth and a decorative cart badge bumps from 0 to 1.
  */
 import BrowserFrame from '@/components/ui/BrowserFrame.astro';
 import Icon from '@/components/ui/Icon.astro';
 import PhoneFrame from '@/components/ui/PhoneFrame.astro';
 import ProjectShot from '@/components/ui/ProjectShot.astro';
-import FlowRail from '@/components/visuals/FlowRail.astro';
 import type { Project, ProjectImage } from '@/data/projects';
 import { cn } from '@/lib/cn';
 import Chapter from './Chapter.astro';
@@ -44,16 +41,6 @@ const sides = (preferred.length === 2 ? preferred : others.slice(0, 2)).map((ima
   side: i === 0 ? 'l' : 'r',
 }));
 const hasStage = hero.length > 0;
-const hasFlow = Boolean(project.flow && project.flow.length > 0);
-
-/* Partially built pieces, stated in words (from the stack notes). */
-const partials = project.stack
-  .filter((tech) => tech.status === 'partial' && tech.note)
-  .map((tech) => {
-    const note = (tech.note ?? '').replace(/;\s*/g, ' · ');
-    return { name: tech.name, note: note.charAt(0).toLowerCase() + note.slice(1) };
-  });
-
 const SIZES = {
   hero: '(min-width: 76rem) 44rem, (min-width: 48rem) 60vw, 122vw',
   side: '(min-width: 76rem) 34rem, (min-width: 48rem) 46vw, 1px',
@@ -68,7 +55,7 @@ const SIZES = {
     </div>
 
     {
-      (hasStage || hasFlow) && (
+      hasStage && (
         <div class="sb-show" data-pj-pointer>
           {hasStage && (
             <figure class="sb-stage" data-reveal style="--d: 1">
@@ -106,43 +93,16 @@ const SIZES = {
                   </div>
                 )}
               </div>
-              <figcaption class="sb-caption">Screens from the running app · sample data</figcaption>
+              <figcaption class="sb-caption">Local demo · sample data</figcaption>
             </figure>
           )}
 
-          {hasFlow && project.flow && (
-            <div class="sb-flow" data-reveal style="--d: 2">
-              <p class="ch-label" aria-hidden="true">
-                Commerce flow
-              </p>
-              <div class="sb-rail">
-                <FlowRail steps={project.flow} label="Commerce flow" size="sm" />
-              </div>
-            </div>
-          )}
-        </div>
-      )
-    }
-
-    {
-      partials.length > 0 && (
-        <div class="sb-notes" data-reveal style="--d: 2">
-          {partials.map((item) => (
-            <p class="sb-note">
-              <span class="status" data-tone="warn">
-                Partial
-              </span>
-              <span class="sb-note-text">
-                <span class="sb-note-name">{item.name}:</span> {item.note}
-              </span>
-            </p>
-          ))}
         </div>
       )
     }
 
     <div class="sb-body">
-      <p class="ch-summary" data-reveal style="--d: 2">{project.summary}</p>
+      <p class="ch-note" data-reveal style="--d: 2">Test payments work; Stripe integration unverified.</p>
       <div class="ch-foot sb-foot" data-reveal style="--d: 3">
         <ProjectStack project={project} />
         <ProjectActions project={project} />
@@ -159,7 +119,7 @@ const SIZES = {
   .sb-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'head' 'show' 'notes' 'body';
+    grid-template-areas: 'head' 'show' 'body';
     row-gap: 2.5rem;
   }
 
@@ -175,14 +135,6 @@ const SIZES = {
     min-width: 0;
   }
 
-  .sb-notes {
-    grid-area: notes;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    min-width: 0;
-  }
-
   .sb-body {
     grid-area: body;
     display: flex;
@@ -191,13 +143,13 @@ const SIZES = {
     min-width: 0;
   }
 
-  /* The numeral fills the empty top-left; the partial note sits under it. */
+  /* The numeral fills the empty left column. */
   @media (min-width: 64rem) {
     .sb-grid {
       grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
       grid-template-areas:
         '. head'
-        'notes body'
+        '. body'
         'show show';
       column-gap: 4rem;
       row-gap: 2rem;
@@ -205,11 +157,6 @@ const SIZES = {
 
     .sb-head {
       padding-top: 0.5rem;
-    }
-
-    .sb-notes {
-      align-self: start;
-      padding-top: 0.375rem;
     }
 
     .sb-show {
@@ -226,30 +173,6 @@ const SIZES = {
     .sb-foot > :global(:last-child) {
       flex: none;
     }
-  }
-
-  /* ---------------------------------------------------------------- */
-  /* Partial note                                                      */
-  /* ---------------------------------------------------------------- */
-
-  .sb-note {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.625rem;
-    padding-left: 1rem;
-    border-left: 1px solid color-mix(in oklab, var(--warn) 45%, transparent);
-  }
-
-  .sb-note-text {
-    color: var(--fg-muted);
-    font-size: 0.875rem;
-    line-height: 1.6;
-  }
-
-  .sb-note-name {
-    color: var(--fg);
-    font-weight: 500;
   }
 
   /* ---------------------------------------------------------------- */
@@ -467,57 +390,4 @@ const SIZES = {
     }
   }
 
-  /* ---------------------------------------------------------------- */
-  /* Commerce flow: steps light up in order on hover                   */
-  /* ---------------------------------------------------------------- */
-
-  .sb-flow {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
-
-  .sb-rail :global(.step-dot) {
-    position: relative;
-  }
-
-  .sb-rail :global(.step-dot)::after {
-    content: '';
-    position: absolute;
-    inset: -6px;
-    border: 1px solid var(--accent-line);
-    border-radius: 999px;
-    box-shadow: 0 0 16px var(--accent-glow);
-    opacity: 0;
-    scale: 0.5;
-    transition:
-      opacity 400ms var(--ease-out-quart),
-      scale 600ms var(--ease-out-expo);
-    transition-delay: calc(var(--i, 0) * 150ms);
-  }
-
-  .sb-rail :global(.step[data-status='partial'] .step-dot)::after {
-    border-color: color-mix(in oklab, var(--warn) 55%, transparent);
-    box-shadow: 0 0 16px color-mix(in oklab, var(--warn) 40%, transparent);
-  }
-
-  .sb-rail :global(.step-index) {
-    transition: color 300ms var(--ease-out-quart);
-    transition-delay: calc(var(--i, 0) * 150ms);
-  }
-
-  @media (hover: hover) {
-    .sb-show:hover .sb-rail :global(.step-dot)::after {
-      opacity: 1;
-      scale: 1;
-    }
-
-    .sb-show:hover .sb-rail :global(.step:not([data-status='partial']) .step-index) {
-      color: var(--accent-text);
-    }
-
-    .sb-show:hover .sb-rail :global(.step[data-status='partial'] .step-index) {
-      color: var(--warn);
-    }
-  }
 </style>

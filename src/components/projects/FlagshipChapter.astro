@@ -46,7 +46,7 @@ const hasStage = hero.length > 0;
  * the API's 409 CONFLICT for refused transitions.
  */
 const workflow = ['new → in_review', 'in_review → in_progress', 'in_progress → completed'];
-const facts = ['Approval routed by category', 'Activity log written server-side', '409 on an invalid transition'];
+const facts = ['Approval routing', 'Activity history', 'Workflow validation'];
 
 const SIZES = {
   front: '(min-width: 80rem) 48rem, (min-width: 64rem) 70vw, (min-width: 40rem) 90vw, 125vw',
@@ -118,19 +118,17 @@ const SIZES = {
             ))}
           </ul>
 
-          <figcaption class="fs-caption">Screens from the running app · demo data</figcaption>
+          <figcaption class="fs-caption">Local demo · sample data</figcaption>
         </figure>
       )
     }
 
     <div class="fs-body">
-      <p class="ch-summary" data-reveal style="--d: 2">{project.summary}</p>
-
       {
         project.statusNote && (
           <p class="ch-note" data-reveal style="--d: 3">
             <Icon name="circle-dot" size={14} />
-            <span>{project.statusNote}</span>
+            <span>Authentication planned.</span>
           </p>
         )
       }

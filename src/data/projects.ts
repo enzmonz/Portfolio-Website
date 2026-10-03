@@ -99,7 +99,7 @@ export const projects: Project[] = [
     title: 'CinnabyteHQ',
     shortTitle: 'CinnabyteHQ',
     category: 'Internal Operations Platform',
-    headline: 'A centralized workspace for managing internal operations.',
+    headline: 'One workspace for requests, approvals, and team tasks.',
     summary:
       'CinnabyteHQ is an internal operations platform that centralizes requests, approvals, and ongoing work into one structured workspace. It is a full-stack web app with its own REST API and a PostgreSQL database.',
     status: 'In Development',
@@ -221,7 +221,7 @@ export const projects: Project[] = [
     title: 'Centralized Hospital Outpatient Services Database',
     shortTitle: 'Hospital Outpatient Database',
     category: 'Database Management System',
-    headline: 'From registration to billing, in one relational model.',
+    headline: 'A relational model connecting outpatient care, appointments, and billing.',
     summary:
       'A relational database designed to centralize hospital outpatient service information, including patient, doctor, appointment, consultation, laboratory, prescription, and billing-related data.',
     status: 'Design Project',
@@ -343,7 +343,7 @@ export const projects: Project[] = [
     title: 'Mobile Booking Application',
     shortTitle: 'Mobile Booking',
     category: 'Mobile Application',
-    headline: 'From an open time slot to a confirmed booking.',
+    headline: 'Check availability, book a service, and manage appointments.',
     summary:
       'A mobile booking application designed around availability checking, booking confirmation, and booking history. The full client-side flow is built with React Native and Expo; the backend is planned.',
     status: 'In Development',
@@ -435,7 +435,7 @@ export const projects: Project[] = [
     title: 'SellBytes',
     shortTitle: 'SellBytes',
     category: 'E-commerce Platform',
-    headline: 'A connected storefront from product discovery to order management.',
+    headline: 'A storefront with checkout, inventory, and order management.',
     summary:
       'SellBytes is an e-commerce platform that connects product discovery, ordering, inventory, and payment workflows into one digital storefront: a server-rendered Astro app on a single PostgreSQL database, with an admin back office.',
     status: 'In Development',

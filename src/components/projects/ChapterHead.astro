@@ -21,7 +21,8 @@ interface Props {
 }
 
 const { project, headingId, size, class: className } = Astro.props;
-const resolved = size ?? (project.title.length > 30 ? 'lg' : 'xl');
+const title = project.title.length > 30 ? project.shortTitle : project.title;
+const resolved = size ?? (title.length > 30 ? 'lg' : 'xl');
 ---
 
 <div class={cn('chh', className)} data-size={resolved}>
@@ -32,7 +33,7 @@ const resolved = size ?? (project.title.length > 30 ? 'lg' : 'xl');
       style={`view-transition-name: pt-${project.slug}`}
       data-astro-prefetch
     >
-      {project.title}
+      {title}
     </a>
   </h3>
   <p class="chh-meta" data-reveal>

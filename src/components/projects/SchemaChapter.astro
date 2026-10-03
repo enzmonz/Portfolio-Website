@@ -5,13 +5,12 @@
  * The entity relationship diagram is the hero: SchemaDiagram's full variant
  * across the whole column (its wide layout from ~58rem, a tall layout or a
  * list below that). The title sits above it with the numeral opposite; the
- * concepts, stack and actions sit underneath.
+ * stack and actions sit underneath.
  *
  * Hover (visual only): connectors start flowing and the entities pick up the
  * accent one after another. SchemaDiagram's own per-entity tracing still
  * works and takes over while an entity is active.
  */
-import Icon from '@/components/ui/Icon.astro';
 import SchemaDiagram from '@/components/visuals/SchemaDiagram.astro';
 import type { Project } from '@/data/projects';
 import Chapter from './Chapter.astro';
@@ -27,20 +26,12 @@ interface Props {
 
 const { project, total } = Astro.props;
 const headingId = cardHeadingId(project);
-const conceptsId = `${project.slug}-concepts`;
-
-/* Keep detailed normalization concepts in the case study and avoid repeating stack chips. */
-const concepts = project.concepts
-  .filter((c) => !/^(U|\d)NF$|normali[sz]ation/i.test(c))
-  .filter((c) => !project.stack.some((tech) => tech.name.toLowerCase() === c.toLowerCase()));
-
 ---
 
 <Chapter project={project} total={total} numberSide="right" class="sc">
   <div class="sc-grid">
     <div class="sc-intro">
       <ChapterHead project={project} headingId={headingId} />
-      <p class="ch-summary sc-summary" data-reveal style="--d: 3">{project.summary}</p>
     </div>
 
     {
@@ -53,30 +44,6 @@ const concepts = project.concepts
     }
 
     <div class="sc-side" data-reveal style="--d: 2">
-      {
-        concepts.length > 0 && (
-          <div class="sc-concepts">
-            <p id={conceptsId} class="ch-label">
-              Concepts
-            </p>
-            <ul class="sc-concept-list" aria-labelledby={conceptsId}>
-              {concepts.map((concept) => (
-                <li>{concept}</li>
-              ))}
-            </ul>
-          </div>
-        )
-      }
-
-      {
-        project.statusNote && (
-          <p class="ch-note">
-            <Icon name="circle-dot" size={14} />
-            <span>{project.statusNote}</span>
-          </p>
-        )
-      }
-
       <div class="ch-foot">
         <ProjectStack project={project} />
         <!-- No code exists for this design project yet: show a repository only once one is linked. -->
@@ -214,37 +181,4 @@ const concepts = project.concepts
     }
   }
 
-  /* ---------------------------------------------------------------- */
-  /* Concepts: an inline run of terms, not boxes                       */
-  /* ---------------------------------------------------------------- */
-
-  .sc-concepts {
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-  }
-
-  .sc-concept-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 0;
-    color: var(--fg-muted);
-    font-family: var(--font-mono);
-    font-size: 0.8125rem;
-    line-height: 1.5rem;
-  }
-
-  .sc-concept-list > li {
-    display: inline-flex;
-    align-items: center;
-  }
-
-  /* Pixel separators: drawn, not generated text, so screen readers skip them. */
-  .sc-concept-list > li:not(:last-child)::after {
-    content: '';
-    width: 0.25rem;
-    height: 0.25rem;
-    margin-inline: 0.75rem;
-    background: var(--fg-faint);
-  }
 </style>

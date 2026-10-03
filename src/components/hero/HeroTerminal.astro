@@ -1,6 +1,6 @@
 ---
 /**
- * Hero terminal — a short typed introduction, CSS only.
+ * Hero terminal — a short typed project list, CSS only.
  *
  * Every line is real DOM text (screen readers and crawlers read it normally).
  * Commands "type" via a stepped width animation measured in `ch`; output lines
@@ -11,7 +11,7 @@
  * The surface is always dark (bg-code) in both themes, so its inner colours are
  * fixed values rather than theme tokens.
  */
-import { site } from '@/data/site';
+import { projects } from '@/data/projects';
 import { cn } from '@/lib/cn';
 
 interface Props {
@@ -33,29 +33,12 @@ interface Block {
   output: Segment[][];
 }
 
-const focus = ['full-stack development', 'system design', 'databases', 'software engineering'];
-
 const script: Block[] = [
   {
-    cmd: 'whoami',
-    output: [
-      [{ text: site.name, tone: 'strong' }],
-      [{ text: site.title, tone: 'out' }],
-      [{ text: `${site.school.program} @ ${site.school.short}`, tone: 'out' }],
-    ],
-  },
-  {
-    cmd: 'cat focus.yml',
-    output: [
-      [
-        { text: 'focus', tone: 'key' },
-        { text: ':', tone: 'punc' },
-      ],
-      ...focus.map((item): Segment[] => [
-        { text: '  - ', tone: 'punc' },
-        { text: item, tone: 'val' },
-      ]),
-    ],
+    cmd: 'ls projects/',
+    output: projects.map((project): Segment[] => [
+      { text: project.shortTitle, tone: 'val' },
+    ]),
   },
 ];
 
@@ -87,7 +70,7 @@ const idleAt = clock;
   <span class="tick tick-br" aria-hidden="true"></span>
 
   <figure class="term" data-inview>
-    <figcaption class="sr-only">Terminal introduction</figcaption>
+    <figcaption class="sr-only">Project directory</figcaption>
 
     <div class="term-bar" aria-hidden="true">
       <span class="term-dots"><span></span><span></span><span></span></span>

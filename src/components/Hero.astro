@@ -4,7 +4,6 @@
  * Pixel display name + copy on the left, portrait with an overlapping terminal and
  * floating stack chips on the right. On phones the portrait sits between name and copy.
  */
-import Icon from '@/components/ui/Icon.astro';
 import LinkButton from '@/components/ui/LinkButton.astro';
 import TechIcon from '@/components/ui/TechIcon.astro';
 import HeroTerminal from '@/components/hero/HeroTerminal.astro';
@@ -81,11 +80,6 @@ const band = ['Full-stack development', 'System design', 'Databases', 'Software 
 
       <p class="enter text-lede mt-5 max-w-[34rem] text-fg-muted" style="--d: 5">{site.tagline}</p>
 
-      <p class="enter mt-4 flex items-start gap-2.5 text-sm leading-relaxed text-fg-subtle" style="--d: 6">
-        <Icon name="graduation-cap" size={16} class="mt-[3px] flex-none" />
-        <span>{site.school.program} student at {site.school.name}.</span>
-      </p>
-
       <div class="enter mt-8 flex flex-wrap items-center gap-2.5 sm:gap-3" style="--d: 7">
         <LinkButton
           href="#projects"
@@ -115,24 +109,6 @@ const band = ['Full-stack development', 'System design', 'Databases', 'Software 
         />
       </div>
 
-      <p class="enter mt-9 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-label text-fg-subtle" style="--d: 8">
-        <span class="mr-1 h-px w-6 bg-border-strong" aria-hidden="true"></span>
-        {
-          site.positioning.map((item, i) => (
-            <>
-              {i > 0 && (
-                <span class="text-fg-faint" aria-hidden="true">
-                  ·
-                </span>
-              )}
-              <span>
-                {item}
-                {i < site.positioning.length - 1 && <span class="sr-only">,</span>}
-              </span>
-            </>
-          ))
-        }
-      </p>
     </div>
   </div>
 

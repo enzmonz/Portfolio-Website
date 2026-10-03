@@ -49,7 +49,7 @@ const entries = experience.map((entry) => {
             eyebrow="Experience"
             title={`Where I've been <span class="text-fg-subtle">building.</span>`}
             id="experience-title"
-            lede="Hands-on roles alongside my studies, from building products at a software startup to an engineering internship."
+            lede="Startup, student community, and internship experience."
           />
 
           <div class="mt-10 max-w-sm border-t border-border pt-6" data-reveal style="--d: 3">
@@ -152,7 +152,7 @@ const entries = experience.map((entry) => {
                         )}
                         {showDetails && (
                           <div class="xp-row">
-                            <dt>Responsibilities</dt>
+                            <dt>Contributions</dt>
                             <dd>
                               {entry.details.length > 0 ? (
                                 <ul class="xp-details">
@@ -191,7 +191,7 @@ const entries = experience.map((entry) => {
                       <div class="xp-evidence mt-6 pt-5 pb-1">
                         <div class="flex items-center justify-between gap-4">
                           <p id={`${titleId}-built`} class="text-label text-fg-subtle">
-                            Built through {entry.org}
+                            Projects
                           </p>
                           <span class="text-label text-fg-subtle" aria-hidden="true">
                             {pad(projects.length)}

@@ -18,7 +18,7 @@ import ChapterHead from './ChapterHead.astro';
 import ProjectActions from './ProjectActions.astro';
 import ProjectStack from './ProjectStack.astro';
 import StageGrid from './StageGrid.astro';
-import { cardHeadingId, leadSentences } from './util';
+import { cardHeadingId } from './util';
 
 interface Props {
   project: Project;
@@ -61,8 +61,6 @@ const headingId = cardHeadingId(project);
     </div>
 
     <div class="mb-body">
-      <p class="ch-summary" data-reveal style="--d: 2">{leadSentences(project.summary, 1)}</p>
-
       <div class="ch-foot" data-reveal style="--d: 4">
         <ProjectStack project={project} />
         <ProjectActions project={project} />
