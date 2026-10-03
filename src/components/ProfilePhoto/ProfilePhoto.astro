@@ -3,11 +3,8 @@
  * Hero portrait in a pixel-cornered frame with an offset outline, soft glow,
  * status tag and a subtle pointer tilt.
  *
- * The image is read from `site.profilePhoto.src` (a file under public/). If the
- * file isn't there yet, an honest placeholder is shown instead — never a fake face.
+ * The image is read from `site.profilePhoto.src` (a file under public/).
  */
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { site } from '@/data/site';
 import { cn } from '@/lib/cn';
 
@@ -17,26 +14,12 @@ interface Props {
 
 const { class: className } = Astro.props;
 const { src, alt } = site.profilePhoto;
-const hasPhoto = existsSync(join(process.cwd(), 'public', src.replace(/^\/+/, '')));
 ---
 
 <figure class={cn('photo', className)} data-tilt>
   <div class="photo-offset" aria-hidden="true"></div>
   <div class="photo-frame">
-    {
-      hasPhoto ? (
-        <img src={src} alt={alt} width="800" height="1000" loading="eager" decoding="async" fetchpriority="high" />
-      ) : (
-        <div class="photo-empty" role="img" aria-label="Profile photo placeholder">
-          <span class="photo-empty-mark" aria-hidden="true">
-            ENZO
-          </span>
-          <span class="photo-empty-hint" aria-hidden="true">
-            photo · public{src}
-          </span>
-        </div>
-      )
-    }
+    <img src={src} alt={alt} width="800" height="1000" loading="eager" decoding="async" fetchpriority="high" />
     <span class="photo-scan" aria-hidden="true"></span>
   </div>
   <span class="px px-tl" aria-hidden="true"></span>
@@ -100,38 +83,6 @@ const hasPhoto = existsSync(join(process.cwd(), 'public', src.replace(/^\/+/, ''
 
   .photo:hover .photo-frame img {
     scale: 1.03;
-  }
-
-  /* Placeholder: pixel monogram on a fine grid */
-  .photo-empty {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    align-content: center;
-    gap: 1rem;
-    background:
-      radial-gradient(closest-side, var(--accent-soft), transparent 85%),
-      linear-gradient(to right, var(--grid-line) 1px, transparent 1px) 0 0 / 22px 22px,
-      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px) 0 0 / 22px 22px,
-      var(--surface);
-  }
-
-  .photo-empty-mark {
-    font-family: var(--font-pixel);
-    font-size: clamp(3rem, 7vw, 5rem);
-    font-weight: 600;
-    line-height: 1;
-    letter-spacing: 0.06em;
-    color: var(--fg);
-    text-shadow: 0 0 30px var(--accent-glow);
-  }
-
-  .photo-empty-hint {
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    letter-spacing: 0.04em;
-    color: var(--fg-subtle);
   }
 
   /* Slow scan line — a CRT nod, very faint */
