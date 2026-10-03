@@ -5,10 +5,10 @@ import tailwindcss from '@tailwindcss/vite';
 
 /**
  * Canonical site URL — used for canonical links, Open Graph URLs, robots.txt and the sitemap.
- * Replace the placeholder with the real domain once the portfolio is deployed,
- * or set SITE_URL in the deploy environment.
+ * Default to the public production domain. SITE_URL can override it for
+ * deployments that need a different canonical domain.
  */
-const SITE_URL = process.env.SITE_URL ?? 'https://enzo-monzon.example';
+const SITE_URL = process.env.SITE_URL?.trim() || 'https://enzmonz.dev';
 
 export default defineConfig({
   site: SITE_URL,
