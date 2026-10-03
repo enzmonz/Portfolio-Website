@@ -10,28 +10,68 @@ const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
 /* Scroll reveal + in-view flags                                       */
 /* ------------------------------------------------------------------ */
 
+/*
+ * Reveal is geometric (getBoundingClientRect), not IntersectionObserver-based:
+ * several entrances start fully clipped (clip-path), and Chromium treats a fully
+ * clipped target as never intersecting — those elements used to stay at opacity 0
+ * forever. Bounding rects ignore clip-path, opacity and filters, so this can't stall.
+ *
+ * An element is revealed once its top has crossed 92% of the viewport height —
+ * including elements already scrolled past (scroll restoration on refresh, #hash
+ * links, back/forward), so nothing above the fold is ever left blank.
+ */
 function initReveal() {
-  const targets = document.querySelectorAll<HTMLElement>('[data-reveal], [data-inview]');
-  if (!('IntersectionObserver' in window) || reduceMotion.matches) {
-    targets.forEach((el) => {
-      el.classList.add('is-visible');
-      el.dataset.visible = 'true';
-    });
-    return;
-  }
-  const io = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        const el = entry.target as HTMLElement;
-        el.classList.add('is-visible');
-        el.dataset.visible = 'true';
-        io.unobserve(el);
+  const root = document.documentElement;
+  const show = (el: HTMLElement) => {
+    el.classList.add('is-visible');
+    el.dataset.visible = 'true';
+  };
+
+  let pending = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal], [data-inview]'));
+  const revealAll = () => {
+    pending.forEach(show);
+    pending = [];
+  };
+
+  // Tells the head watchdog (Layout.astro) that the reveal system is alive.
+  root.classList.add('reveal-ready');
+
+  if (reduceMotion.matches) return revealAll();
+
+  let frame = 0;
+  const sweep = () => {
+    frame = 0;
+    const line = window.innerHeight * 0.92;
+    pending = pending.filter((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) return true; // display:none (e.g. other breakpoint)
+      if (r.top < line) {
+        show(el);
+        return false;
       }
-    },
-    { rootMargin: '0px 0px -8% 0px', threshold: 0.12 },
-  );
-  targets.forEach((el) => io.observe(el));
+      return true;
+    });
+    if (!pending.length) stop();
+  };
+  const schedule = () => {
+    if (!frame) frame = requestAnimationFrame(sweep);
+  };
+  const events: [EventTarget, string][] = [
+    [window, 'scroll'],
+    [window, 'resize'],
+    [window, 'load'],
+    [window, 'hashchange'],
+    [window, 'pageshow'],
+  ];
+  const stop = () => events.forEach(([t, e]) => t.removeEventListener(e, schedule));
+  events.forEach(([t, e]) => t.addEventListener(e, schedule, { passive: true }));
+
+  sweep();
+  // Fonts and images can shift layout after the first sweep.
+  document.fonts?.ready.then(schedule);
+
+  // If the visitor switches motion off mid-visit, nothing should wait for a scroll.
+  reduceMotion.addEventListener('change', (e) => e.matches && revealAll());
 }
 
 /* ------------------------------------------------------------------ */

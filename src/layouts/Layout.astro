@@ -62,6 +62,13 @@ const personLd = {
           var t = localStorage.getItem('theme');
           if (t === 'light' || t === 'dark') d.dataset.theme = t;
         } catch (e) {}
+        // Watchdog: reveal animations hide content only under html.js. If the site
+        // script fails to load or run, drop that class so everything stays visible.
+        window.addEventListener('load', function () {
+          setTimeout(function () {
+            if (!d.classList.contains('reveal-ready')) d.classList.remove('js');
+          }, 1500);
+        });
       })();
     </script>
     <title>{title}</title>
