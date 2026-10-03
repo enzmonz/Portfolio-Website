@@ -3,7 +3,7 @@
  * Chapter 03, the mobile app (presentation: 'mobile').
  *
  * lg+: the interactive BookingPhone recreation on the left, slightly turned
- * (-4deg); the story, the booking flow and the planned backend on the right.
+ * (-4deg); the summary, stack and project links on the right.
  * Below lg: title → phone → text.
  *
  * Hover (visual only, mouse): the phone straightens and lifts, and two small
@@ -18,7 +18,7 @@ import ChapterHead from './ChapterHead.astro';
 import ProjectActions from './ProjectActions.astro';
 import ProjectStack from './ProjectStack.astro';
 import StageGrid from './StageGrid.astro';
-import { cardHeadingId } from './util';
+import { cardHeadingId, leadSentences } from './util';
 
 interface Props {
   project: Project;
@@ -27,9 +27,6 @@ interface Props {
 
 const { project, total } = Astro.props;
 const headingId = cardHeadingId(project);
-const flowId = `${project.slug}-flow`;
-const flow = project.flow ?? [];
-const pad = (n: number) => String(n).padStart(2, '0');
 ---
 
 <Chapter project={project} total={total} numberSide="left" class="mb">
@@ -64,37 +61,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
     </div>
 
     <div class="mb-body">
-      <p class="ch-summary" data-reveal style="--d: 2">{project.summary}</p>
-
-      {
-        flow.length > 0 && (
-          <div class="mb-flow" data-reveal style="--d: 3">
-            <p class="ch-label" id={flowId}>
-              Booking flow
-            </p>
-            <ol class="mb-steps" aria-labelledby={flowId}>
-              {flow.map((step, i) => (
-                <li class="mb-step">
-                  <span class="mb-step-index" aria-hidden="true">
-                    {pad(i + 1)}
-                  </span>
-                  <span class="mb-step-label">{step.label}</span>
-                  {step.detail && <span class="mb-step-detail">{step.detail}</span>}
-                </li>
-              ))}
-            </ol>
-          </div>
-        )
-      }
-
-      {
-        project.statusNote && (
-          <p class="mb-plan" data-reveal style="--d: 3">
-            <span class="mb-plan-tag">Planned</span>
-            <span>{project.statusNote}</span>
-          </p>
-        )
-      }
+      <p class="ch-summary" data-reveal style="--d: 2">{leadSentences(project.summary, 1)}</p>
 
       <div class="ch-foot" data-reveal style="--d: 4">
         <ProjectStack project={project} />
@@ -343,82 +310,4 @@ const pad = (n: number) => String(n).padStart(2, '0');
     }
   }
 
-  /* ---------------------------------------------------------------- */
-  /* Flow + planned backend                                            */
-  /* ---------------------------------------------------------------- */
-
-  .mb-flow {
-    display: flex;
-    flex-direction: column;
-    gap: 0.875rem;
-  }
-
-  .mb-steps {
-    display: grid;
-    gap: 0.875rem 1.5rem;
-  }
-
-  @media (min-width: 30rem) {
-    .mb-steps {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  .mb-step {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--border);
-  }
-
-  .mb-step-index {
-    grid-row: span 2;
-    color: var(--accent-text);
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    line-height: 1.25rem;
-    letter-spacing: 0.04em;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .mb-step-label {
-    color: var(--fg);
-    font-size: 0.875rem;
-    font-weight: 600;
-    line-height: 1.25rem;
-    letter-spacing: -0.01em;
-  }
-
-  .mb-step-detail {
-    color: var(--fg-subtle);
-    font-size: 0.8125rem;
-    line-height: 1.45;
-  }
-
-  .mb-plan {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    max-width: 60ch;
-    padding-left: 1rem;
-    border-left: 1px dashed var(--border-hover);
-    color: var(--fg-muted);
-    font-size: 0.875rem;
-    line-height: 1.6;
-  }
-
-  .mb-plan-tag {
-    flex: none;
-    margin-top: 0.125rem;
-    padding: 0.0625rem 0.4375rem;
-    border: 1px dashed var(--border-hover);
-    border-radius: 0.3125rem;
-    color: var(--fg-subtle);
-    font-family: var(--font-mono);
-    font-size: 0.625rem;
-    line-height: 1rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
 </style>

@@ -24,7 +24,7 @@ import ChapterHead from './ChapterHead.astro';
 import ProjectActions from './ProjectActions.astro';
 import ProjectStack from './ProjectStack.astro';
 import StageGrid from './StageGrid.astro';
-import { cardHeadingId, findImage, leadSentences, pickScreens } from './util';
+import { cardHeadingId, findImage, pickScreens } from './util';
 
 interface Props {
   project: Project;
@@ -37,11 +37,6 @@ const headingId = cardHeadingId(project);
 const { hero, others, phone } = pickScreens(project);
 const back = findImage(project, 'cinnabytehq/request-detail.png') ?? others[0];
 const hasStage = hero.length > 0;
-
-const brief = [
-  { key: 'problem', label: 'Problem', text: leadSentences(project.problem, 1) },
-  { key: 'solution', label: 'Solution', text: leadSentences(project.solution, 2) },
-];
 
 /*
  * Implementation details for the floating chips. Checked against the
@@ -131,17 +126,6 @@ const SIZES = {
     <div class="fs-body">
       <p class="ch-summary" data-reveal style="--d: 2">{project.summary}</p>
 
-      <dl class="fs-brief" data-reveal style="--d: 3">
-        {
-          brief.map((item) => (
-            <div class="fs-brief-item" data-kind={item.key}>
-              <dt class="ch-label">{item.label}</dt>
-              <dd class="fs-brief-text">{item.text}</dd>
-            </div>
-          ))
-        }
-      </dl>
-
       {
         project.statusNote && (
           <p class="ch-note" data-reveal style="--d: 3">
@@ -198,39 +182,6 @@ const SIZES = {
     .fs-head {
       padding-top: clamp(6rem, 6vw + 1.5rem, 8rem);
     }
-  }
-
-  /* ---------------------------------------------------------------- */
-  /* Problem / solution                                                */
-  /* ---------------------------------------------------------------- */
-
-  .fs-brief {
-    display: grid;
-    gap: 1.25rem;
-    margin: 0;
-  }
-
-  @media (min-width: 40rem) and (max-width: 63.98rem) {
-    .fs-brief {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 2rem;
-    }
-  }
-
-  .fs-brief-item {
-    padding-left: 1rem;
-    border-left: 1px solid var(--border-strong);
-  }
-
-  .fs-brief-item[data-kind='solution'] {
-    border-left-color: var(--accent-line);
-  }
-
-  .fs-brief-text {
-    margin: 0.375rem 0 0;
-    color: var(--fg-muted);
-    font-size: 0.9375rem;
-    line-height: 1.65;
   }
 
   /* ---------------------------------------------------------------- */

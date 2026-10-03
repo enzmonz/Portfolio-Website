@@ -5,15 +5,13 @@
  * The entity relationship diagram is the hero: SchemaDiagram's full variant
  * across the whole column (its wide layout from ~58rem, a tall layout or a
  * list below that). The title sits above it with the numeral opposite; the
- * normalization path runs as a strip underneath, beside the concepts, stack
- * and actions.
+ * concepts, stack and actions sit underneath.
  *
  * Hover (visual only): connectors start flowing and the entities pick up the
  * accent one after another. SchemaDiagram's own per-entity tracing still
  * works and takes over while an entity is active.
  */
 import Icon from '@/components/ui/Icon.astro';
-import NormalizationSteps from '@/components/visuals/NormalizationSteps.astro';
 import SchemaDiagram from '@/components/visuals/SchemaDiagram.astro';
 import type { Project } from '@/data/projects';
 import Chapter from './Chapter.astro';
@@ -31,12 +29,11 @@ const { project, total } = Astro.props;
 const headingId = cardHeadingId(project);
 const conceptsId = `${project.slug}-concepts`;
 
-/* Normal forms are drawn as steps, and stack entries are listed as chips. */
+/* Keep detailed normalization concepts in the case study and avoid repeating stack chips. */
 const concepts = project.concepts
   .filter((c) => !/^(U|\d)NF$|normali[sz]ation/i.test(c))
   .filter((c) => !project.stack.some((tech) => tech.name.toLowerCase() === c.toLowerCase()));
 
-const normalized = project.concepts.some((c) => /^\dNF$|normali[sz]ation/i.test(c));
 ---
 
 <Chapter project={project} total={total} numberSide="right" class="sc">
@@ -51,22 +48,6 @@ const normalized = project.concepts.some((c) => /^\dNF$|normali[sz]ation/i.test(
         <div class="sc-erd" data-reveal style="--d: 1">
           <SchemaDiagram schema={project.schema} variant="full" />
           <p class="sc-erd-note">Simplified entity overview · key columns only</p>
-        </div>
-      )
-    }
-
-    {
-      normalized && (
-        <div class="sc-nf" data-reveal style="--d: 1">
-          <p class="ch-label" aria-hidden="true">
-            Normalization · UNF → 3NF
-          </p>
-          <div class="sc-nf-compact">
-            <NormalizationSteps compact />
-          </div>
-          <div class="sc-nf-full">
-            <NormalizationSteps />
-          </div>
         </div>
       )
     }
@@ -113,7 +94,7 @@ const normalized = project.concepts.some((c) => /^\dNF$|normali[sz]ation/i.test(
   .sc-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'intro' 'erd' 'nf' 'side';
+    grid-template-areas: 'intro' 'erd' 'side';
     row-gap: 2.5rem;
   }
 
@@ -127,14 +108,6 @@ const normalized = project.concepts.some((c) => /^\dNF$|normali[sz]ation/i.test(
 
   .sc-erd {
     grid-area: erd;
-    min-width: 0;
-  }
-
-  .sc-nf {
-    grid-area: nf;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
     min-width: 0;
   }
 
@@ -152,17 +125,13 @@ const normalized = project.concepts.some((c) => /^\dNF$|normali[sz]ation/i.test(
       grid-template-areas:
         'intro .'
         'erd erd'
-        'nf side';
+        'side side';
       column-gap: 4rem;
       row-gap: 2.5rem;
     }
 
     .sc-intro {
       padding-top: 0.5rem;
-    }
-
-    .sc-nf {
-      padding-top: 0.25rem;
     }
   }
 
@@ -242,30 +211,6 @@ const normalized = project.concepts.some((c) => /^\dNF$|normali[sz]ation/i.test(
 
     :global(html.js) .sc-erd[data-reveal]:global(.is-visible) {
       clip-path: inset(-3rem);
-    }
-  }
-
-  /* ---------------------------------------------------------------- */
-  /* Normalization strip                                               */
-  /* ---------------------------------------------------------------- */
-
-  /* Phones get the chip row; from md the steps carry their definitions. */
-  .sc-nf-compact {
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  .sc-nf-full {
-    display: none;
-  }
-
-  @media (min-width: 48rem) {
-    .sc-nf-compact {
-      display: none;
-    }
-
-    .sc-nf-full {
-      display: block;
     }
   }
 

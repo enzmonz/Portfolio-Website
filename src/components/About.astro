@@ -4,10 +4,8 @@
  * separate section). Typographic and flowing rather than a grid of boxes.
  * Skills come from src/data/skills.ts; "used in" is computed from projects.ts.
  */
-import Icon from '@/components/ui/Icon.astro';
 import SectionHeader from '@/components/ui/SectionHeader.astro';
 import TechIcon from '@/components/ui/TechIcon.astro';
-import type { IconName } from '@/components/ui/icons';
 import { site } from '@/data/site';
 import { primaryFocus, projectsUsing, skillGroups } from '@/data/skills';
 
@@ -18,16 +16,6 @@ const profile: { key: string; value: string; sub?: string; live?: boolean }[] = 
   { key: 'Currently', value: 'Associate Founder, Cinnabyte' },
   ...(site.availability ? [{ key: 'Open to', value: 'Internships & collaborations', live: true }] : []),
 ];
-
-const developing: { label: string; icon: IconName }[] = [
-  { label: 'Programming', icon: 'code' },
-  { label: 'Data structures', icon: 'git-branch' },
-  { label: 'System design', icon: 'workflow' },
-  { label: 'Full-stack development', icon: 'layers' },
-  { label: 'Database systems', icon: 'database' },
-];
-
-const lookingFor = ['Real-world projects', 'Internships', 'Collaboration', 'Building practical software'];
 
 const usage = (name: string) => {
   const group = skillGroups.flatMap((g) => g.skills).find((s) => s.name === name);
@@ -84,36 +72,6 @@ const usage = (name: string) => {
           </p>
         </div>
 
-        <div class="mt-10 grid gap-8 sm:grid-cols-2" data-reveal style="--d: 3">
-          <div>
-            <h3 class="mini-title">Currently developing</h3>
-            <ul class="mt-4 flex flex-col">
-              {
-                developing.map((d, i) => (
-                  <li class="dev-row">
-                    <span class="font-mono text-[0.6875rem] text-fg-subtle">{String(i + 1).padStart(2, '0')}</span>
-                    <Icon name={d.icon} size={15} class="text-accent-text" />
-                    <span>{d.label}</span>
-                  </li>
-                ))
-              }
-            </ul>
-          </div>
-          <div>
-            <h3 class="mini-title">Looking for</h3>
-            <p class="mt-4 text-[0.9375rem] leading-[1.9] text-fg-muted">
-              {
-                lookingFor.map((item, i) => (
-                  <>
-                    <span class="text-fg">{item}</span>
-                    {i < lookingFor.length - 1 && <span class="sep" aria-hidden="true"> / </span>}
-                    {i < lookingFor.length - 1 && <span class="sr-only">,</span>}
-                  </>
-                ))
-              }
-            </p>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -125,34 +83,6 @@ const usage = (name: string) => {
         <h3 class="tech-focus">{primaryFocus.label}</h3>
         <p class="mt-3 max-w-[46ch] text-fg-muted">{primaryFocus.description}</p>
       </div>
-
-      <!-- The stack, as one flowing line: Interface → API → Data -->
-      <ol class="layers" aria-label="Full-stack layers" data-reveal style="--d: 1" data-inview>
-        {
-          primaryFocus.layers.map((layer, i) => (
-            <li class="layer">
-              <span class="layer-name">
-                <span class="font-mono text-[0.6875rem] text-fg-subtle">L{i + 1}</span>
-                {layer.label}
-              </span>
-              <span class="layer-skills">
-                {layer.skills.map((name) => (
-                  <span class="tok" data-skill={name}>
-                    <TechIcon name={name} size={13} />
-                    {name}
-                  </span>
-                ))}
-              </span>
-              {i < primaryFocus.layers.length - 1 && (
-                <svg class="layer-link" viewBox="0 0 40 12" aria-hidden="true">
-                  <path class="draw-line" pathLength="1" d="M0 6 H34" />
-                  <path d="M30 2 L36 6 L30 10" />
-                </svg>
-              )}
-            </li>
-          ))
-        }
-      </ol>
 
       <dl class="groups" data-reveal style="--d: 2">
         {
@@ -241,34 +171,6 @@ const usage = (name: string) => {
     color: var(--fg-subtle);
   }
 
-  .mini-title {
-    font-family: var(--font-pixel);
-    font-size: 0.9375rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--fg-subtle);
-  }
-
-  .dev-row {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5625rem 0;
-    border-bottom: 1px dashed var(--border);
-    font-size: 0.9375rem;
-    color: var(--fg);
-    transition: translate 300ms var(--ease-out-expo);
-  }
-
-  .dev-row:hover {
-    translate: 4px 0;
-  }
-
-  .sep {
-    color: var(--accent-text);
-  }
-
   /* Technical profile */
   .tech {
     display: grid;
@@ -308,69 +210,6 @@ const usage = (name: string) => {
     text-transform: uppercase;
     color: var(--fg);
     text-shadow: 0 0 36px color-mix(in oklab, var(--accent) 18%, transparent);
-  }
-
-  .layers {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  @media (width >= 48rem) {
-    .layers {
-      flex-direction: row;
-      align-items: stretch;
-      gap: 0;
-    }
-  }
-
-  .layer {
-    position: relative;
-    flex: 1 1 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-    padding: 0.25rem 0;
-  }
-
-  @media (width >= 48rem) {
-    .layer {
-      padding-right: 2.75rem;
-    }
-  }
-
-  .layer-name {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    font-family: var(--font-pixel);
-    font-size: 1.25rem;
-    color: var(--fg);
-  }
-
-  .layer-skills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem 0.875rem;
-  }
-
-  .layer-link {
-    display: none;
-  }
-
-  @media (width >= 48rem) {
-    .layer-link {
-      display: block;
-      position: absolute;
-      top: 0.6rem;
-      right: 0.25rem;
-      width: 2.25rem;
-      height: 0.75rem;
-      fill: none;
-      stroke: var(--accent);
-      stroke-width: 1.25;
-      overflow: visible;
-    }
   }
 
   .groups {
