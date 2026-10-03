@@ -132,6 +132,12 @@ const band = ['Full-stack development', 'System design', 'Databases', 'Software 
 </section>
 
 <style>
+  /* Paint the LCP name and portrait without waiting for entrance animations. */
+  .hero .enter,
+  .hero .mask-line > span {
+    animation: none;
+  }
+
   .hero {
     padding-top: 7.5rem;
     padding-bottom: 1.5rem;

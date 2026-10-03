@@ -14,7 +14,8 @@ export default defineConfig({
   site: SITE_URL,
   trailingSlash: 'never',
   devToolbar: { enabled: false },
-  build: { format: 'file' },
+  // Include CSS in the initial HTML to avoid three blocking stylesheet requests.
+  build: { format: 'file', inlineStylesheets: 'always' },
   integrations: [sitemap()],
   prefetch: { prefetchAll: false, defaultStrategy: 'hover' },
   fonts: [

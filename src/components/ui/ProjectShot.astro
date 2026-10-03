@@ -28,7 +28,7 @@ const { image, sizes, loading = 'lazy', class: className, widths, fetchpriority 
 const src = projectImage(image.src);
 const isMobile = image.kind === 'mobile';
 
-const requested = widths ?? (isMobile ? [240, 390, 560, 780] : [480, 768, 1080, 1440]);
+const requested = widths ?? (isMobile ? [120, 180, 240, 390, 560, 780] : [360, 480, 640, 768, 960, 1080, 1440]);
 // Never upscale: drop widths larger than the source, and always offer the source width.
 const usable = Array.from(new Set([...requested.filter((w) => w < src.width), Math.min(Math.max(...requested), src.width)])).sort(
   (a, b) => a - b,

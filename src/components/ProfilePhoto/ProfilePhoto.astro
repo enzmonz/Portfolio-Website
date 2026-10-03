@@ -3,8 +3,9 @@
  * Hero portrait in a pixel-cornered frame with an offset outline, soft glow,
  * a subtle pointer tilt.
  *
- * The image is read from `site.profilePhoto.src` (a file under public/).
+ * The imported portrait is resized and compressed at build time.
  */
+import { Picture } from 'astro:assets';
 import { site } from '@/data/site';
 import { cn } from '@/lib/cn';
 
@@ -19,7 +20,19 @@ const { src, alt } = site.profilePhoto;
 <figure class={cn('photo', className)} data-tilt>
   <div class="photo-offset" aria-hidden="true"></div>
   <div class="photo-frame">
-    <img src={src} alt={alt} width="800" height="1000" loading="eager" decoding="async" fetchpriority="high" />
+    <Picture
+      src={src}
+      alt={alt}
+      width={740}
+      widths={[280, 420, 560, 740]}
+      sizes="(min-width: 64rem) 23rem, (min-width: 40rem) 21rem, min(17.5rem, calc(100vw - 2.5rem))"
+      formats={['webp']}
+      fallbackFormat="jpg"
+      quality={70}
+      loading="eager"
+      decoding="async"
+      fetchpriority="high"
+    />
     <span class="photo-scan" aria-hidden="true"></span>
   </div>
   <span class="px px-tl" aria-hidden="true"></span>
@@ -65,14 +78,14 @@ const { src, alt } = site.profilePhoto;
       0 30px 80px -40px var(--accent-glow);
   }
 
-  .photo-frame img {
+  .photo-frame :global(img) {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: scale 900ms var(--ease-out-expo);
   }
 
-  .photo:hover .photo-frame img {
+  .photo:hover .photo-frame :global(img) {
     scale: 1.03;
   }
 

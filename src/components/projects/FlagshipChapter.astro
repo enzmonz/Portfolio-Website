@@ -49,9 +49,10 @@ const workflow = ['new → in_review', 'in_review → in_progress', 'in_progress
 const facts = ['Approval routing', 'Activity history', 'Workflow validation'];
 
 const SIZES = {
-  front: '(min-width: 80rem) 48rem, (min-width: 64rem) 70vw, (min-width: 40rem) 90vw, 125vw',
-  back: '(min-width: 64rem) 38rem, (min-width: 40rem) 80vw, 1px',
-  phone: '(min-width: 64rem) 8rem, (min-width: 40rem) 16vw, 28vw',
+  // Match the stage widths, page padding, and desktop column gap.
+  front: '(min-width: 76rem) 42.84rem, (min-width: 64rem) calc(63vw - 5.04rem), (min-width: 40rem) calc(88vw - 3.52rem), calc(125vw - 3.125rem)',
+  back: '(min-width: 76rem) 39.67rem, (min-width: 64rem) calc(58.34vw - 4.667rem), (min-width: 40rem) calc(78vw - 3.12rem), 1px',
+  phone: '(min-width: 76rem) 7.54rem, (min-width: 64rem) calc(11.084vw - 0.887rem), (min-width: 40rem) calc(16vw - 0.64rem), calc(28vw - 0.7rem)',
 };
 ---
 

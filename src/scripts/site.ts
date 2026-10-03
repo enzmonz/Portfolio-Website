@@ -42,15 +42,18 @@ function initReveal() {
   const sweep = () => {
     frame = 0;
     const line = window.innerHeight * 0.92;
+    // Read all geometry before changing classes to avoid layout thrashing.
+    const visible: HTMLElement[] = [];
     pending = pending.filter((el) => {
       const r = el.getBoundingClientRect();
       if (r.width === 0 && r.height === 0) return true; // display:none (e.g. other breakpoint)
       if (r.top < line) {
-        show(el);
+        visible.push(el);
         return false;
       }
       return true;
     });
+    visible.forEach(show);
     if (!pending.length) stop();
   };
   const schedule = () => {

@@ -1,3 +1,5 @@
+import portrait from '@/assets/profile.jpg';
+
 /**
  * Global site settings and copy that appears in more than one place.
  * Contact links live in `socials.ts`.
@@ -15,11 +17,11 @@ export const site = {
   tagline:
     'I build web and mobile apps that make everyday work simpler.',
   /**
-   * Profile photo shown in the hero. Drop the file at public/images/profile.jpg
-   * (any path under public/ works). Until the file exists, a placeholder frame is shown.
+   * Imported hero portrait, optimized into responsive images at build time.
+   * Replace src/assets/profile.jpg to update it.
    */
   profilePhoto: {
-    src: '/images/profile.jpg',
+    src: portrait,
     alt: 'Portrait of Enzo Monzon',
   },
   /** Shown as the availability pill in the hero. Set to null to hide it. */

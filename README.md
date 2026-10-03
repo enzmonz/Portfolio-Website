@@ -120,10 +120,10 @@ This makes it possible to update the portfolio without modifying the individual 
 To add the profile photo displayed in the hero section, place your image at:
 
 ```text
-public/images/profile.jpg
+src/assets/profile.jpg
 ```
 
-A **4:5 portrait image** with a width of at least **800px** is recommended.
+A **4:5 portrait image** with a width of at least **800px** is recommended. Astro generates responsive WebP and JPEG versions at build time.
 
 The portfolio automatically uses the image when it is available.
 
