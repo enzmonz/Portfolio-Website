@@ -1,0 +1,373 @@
+---
+/**
+ * UNF → 1NF → 2NF → 3NF progression with one-line textbook definitions.
+ *
+ * Full: a vertical rail by default, and four columns joined by arrowed
+ * connectors once its own width reaches 34rem (container query), so it never
+ * cramps inside a narrow card. Compact: just the chips row, always horizontal.
+ * 3NF, the end state, carries the accent.
+ */
+import { cn } from '@/lib/cn';
+
+interface Props {
+  /** Only the labelled chips row, without names and definitions. */
+  compact?: boolean;
+  class?: string;
+}
+
+const { compact = false, class: className } = Astro.props;
+
+const steps = [
+  {
+    label: 'UNF',
+    name: 'Unnormalized form',
+    definition: 'The starting point: repeating groups and multi-valued fields.',
+  },
+  {
+    label: '1NF',
+    name: 'First normal form',
+    definition: 'Every field holds one atomic value, with no repeating groups.',
+  },
+  {
+    label: '2NF',
+    name: 'Second normal form',
+    definition: 'Every non-key attribute depends on the whole key.',
+  },
+  {
+    label: '3NF',
+    name: 'Third normal form',
+    definition: 'No transitive dependencies between non-key attributes.',
+  },
+];
+
+const last = steps.length - 1;
+const tone = (i: number) => (i === 0 ? 'raw' : i === last ? 'final' : undefined);
+---
+
+<div class={cn('nf', className)} data-variant={compact ? 'compact' : 'full'} data-inview>
+  <ol class="nf-list" aria-label="Normalization steps">
+    {
+      steps.map((step, i) => (
+        <li class="nf-step" data-tone={tone(i)} style={`--i: ${i}`}>
+          <div class="nf-head">
+            <span class="nf-chip">
+              {step.label}
+              {compact && <span class="sr-only">, {step.name.toLowerCase()}</span>}
+            </span>
+            {i < last && (
+              <span class="nf-conn" data-into-final={i === last - 1 ? '' : undefined} aria-hidden="true">
+                <svg class="nf-arrow nf-arrow-r" viewBox="0 0 6 10" width="6" height="10" focusable="false">
+                  <path d="M1 1 5 5 1 9" />
+                </svg>
+                <svg class="nf-arrow nf-arrow-d" viewBox="0 0 10 6" width="10" height="6" focusable="false">
+                  <path d="M1 1 5 5 9 1" />
+                </svg>
+              </span>
+            )}
+          </div>
+          {!compact && (
+            <div class="nf-body">
+              <p class="nf-name">{step.name}</p>
+              <p class="nf-def">{step.definition}</p>
+            </div>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</div>
+
+<style>
+  .nf {
+    --nf-chip-h: 1.75rem;
+    --nf-chip-w: 3.25rem;
+    --nf-row-gap: 1.25rem;
+    --nf-col-gap: 1.25rem;
+    min-width: 0;
+  }
+
+  .nf[data-variant='full'] {
+    container: nf / inline-size;
+  }
+
+  .nf-list {
+    display: grid;
+    row-gap: var(--nf-row-gap);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* ---------------- Chip ---------------- */
+
+  .nf-head {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .nf-chip {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--nf-chip-w);
+    height: var(--nf-chip-h);
+    padding-inline: 0.625rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 0.5rem;
+    background: var(--surface-2);
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  /* The raw starting point reads as unfinished; 3NF is the end state. */
+  .nf-step[data-tone='raw'] .nf-chip {
+    border-style: dashed;
+    background: transparent;
+    color: var(--fg-subtle);
+  }
+
+  .nf-step[data-tone='final'] .nf-chip {
+    border-color: var(--accent-line);
+    background: var(--accent-soft);
+    color: var(--accent-text);
+  }
+
+  /* ---------------- Connectors ---------------- */
+
+  .nf-conn {
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .nf-conn::before {
+    content: '';
+    position: absolute;
+    background: var(--border-hover);
+  }
+
+  .nf-arrow {
+    position: absolute;
+    overflow: visible;
+  }
+
+  .nf-arrow path {
+    fill: none;
+    stroke: var(--fg-subtle);
+    stroke-width: 1.25;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .nf-conn[data-into-final]::before {
+    background: var(--accent-line);
+  }
+
+  .nf-conn[data-into-final] .nf-arrow path {
+    stroke: var(--accent-text);
+  }
+
+  /* Horizontal connector in the compact row (the full variant switches to the
+     same geometry when wide): the shaft runs to the arrow's tip. */
+  .nf[data-variant='compact'] .nf-conn {
+    position: relative;
+    height: 10px;
+  }
+
+  .nf[data-variant='compact'] .nf-conn::before {
+    top: 4.5px;
+    right: 1px;
+    left: 0;
+    height: 1px;
+  }
+
+  .nf[data-variant='compact'] .nf-arrow-r {
+    top: 0;
+    right: 0;
+  }
+
+  .nf[data-variant='compact'] .nf-arrow-d {
+    display: none;
+  }
+
+  /* ---------------- Full: vertical rail (default) ---------------- */
+
+  .nf[data-variant='full'] .nf-step {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--nf-chip-w) minmax(0, 1fr);
+    column-gap: 1rem;
+    align-items: start;
+  }
+
+  /* From under this chip to just above the next one. */
+  .nf[data-variant='full'] .nf-conn {
+    top: calc(var(--nf-chip-h) + 0.3125rem);
+    bottom: calc(0.3125rem - var(--nf-row-gap));
+    left: calc(var(--nf-chip-w) / 2 - 5px);
+    width: 10px;
+  }
+
+  .nf[data-variant='full'] .nf-conn::before {
+    top: 0;
+    bottom: 1px;
+    left: 4.5px;
+    width: 1px;
+  }
+
+  .nf[data-variant='full'] .nf-arrow-d {
+    bottom: 0;
+    left: 0;
+  }
+
+  .nf[data-variant='full'] .nf-arrow-r {
+    display: none;
+  }
+
+  .nf-name {
+    color: var(--fg);
+    font-size: 0.875rem;
+    line-height: var(--nf-chip-h);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .nf-def {
+    max-width: 48ch;
+    color: var(--fg-muted);
+    font-size: 0.8125rem;
+    line-height: 1.55;
+  }
+
+  /* ---------------- Full: four columns when there's room ---------------- */
+
+  @container nf (min-width: 34rem) {
+    .nf[data-variant='full'] .nf-list {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      column-gap: var(--nf-col-gap);
+      row-gap: 0;
+    }
+
+    .nf[data-variant='full'] .nf-step {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+    }
+
+    .nf[data-variant='full'] .nf-conn {
+      position: relative;
+      inset: auto;
+      flex: 1;
+      width: auto;
+      height: 10px;
+      margin-left: 0.625rem;
+      /* Reach across the column gap, stopping short of the next chip. */
+      margin-right: calc(0.375rem - var(--nf-col-gap));
+    }
+
+    .nf[data-variant='full'] .nf-conn::before {
+      top: 4.5px;
+      right: 1px;
+      bottom: auto;
+      left: 0;
+      width: auto;
+      height: 1px;
+    }
+
+    .nf[data-variant='full'] .nf-arrow-r {
+      display: block;
+      top: 0;
+      right: 0;
+    }
+
+    .nf[data-variant='full'] .nf-arrow-d {
+      display: none;
+    }
+
+    .nf-name {
+      line-height: 1.35;
+    }
+
+    .nf-def {
+      margin-top: 0.25rem;
+    }
+  }
+
+  /* ---------------- Compact: one chips row ---------------- */
+
+  .nf[data-variant='compact'] .nf-list {
+    display: flex;
+    align-items: center;
+  }
+
+  .nf[data-variant='compact'] .nf-step {
+    display: flex;
+    flex: 0 1 auto;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .nf[data-variant='compact'] .nf-chip {
+    min-width: 0;
+  }
+
+  /* Fixed width so the row sizes to its content; shrinks on tight rows. */
+  .nf[data-variant='compact'] .nf-conn {
+    flex: 0 1 auto;
+    width: 2.25rem;
+    min-width: 0.75rem;
+    margin-inline: 0.375rem;
+  }
+
+  /* ---------------- Entrance (JS only; final state is the no-JS state) ---------------- */
+
+  :global(html.js) .nf .nf-chip {
+    transition:
+      opacity 600ms var(--ease-out-expo),
+      transform 600ms var(--ease-out-expo);
+    transition-delay: calc(var(--i, 0) * 140ms);
+  }
+
+  :global(html.js) .nf:not([data-visible='true']) .nf-chip {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  :global(html.js) .nf .nf-body {
+    transition:
+      opacity 700ms var(--ease-out-expo),
+      transform 700ms var(--ease-out-expo);
+    transition-delay: calc(var(--i, 0) * 140ms + 80ms);
+  }
+
+  :global(html.js) .nf:not([data-visible='true']) .nf-body {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  :global(html.js) .nf .nf-conn {
+    clip-path: inset(-2px);
+    transition: clip-path 800ms var(--ease-out-expo);
+    transition-delay: calc(var(--i, 0) * 140ms + 180ms);
+  }
+
+  :global(html.js) .nf[data-variant='compact']:not([data-visible='true']) .nf-conn {
+    clip-path: inset(-2px 100% -2px -2px);
+  }
+
+  :global(html.js) .nf[data-variant='full']:not([data-visible='true']) .nf-conn {
+    clip-path: inset(-2px -2px 100% -2px);
+  }
+
+  @container nf (min-width: 34rem) {
+    :global(html.js) .nf[data-variant='full']:not([data-visible='true']) .nf-conn {
+      clip-path: inset(-2px 100% -2px -2px);
+    }
+  }
+</style>

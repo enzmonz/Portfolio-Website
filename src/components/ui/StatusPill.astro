@@ -1,0 +1,13 @@
+---
+import { statusTone, type ProjectStatus } from '@/data/projects';
+import { cn } from '@/lib/cn';
+
+interface Props {
+  status: ProjectStatus;
+  class?: string;
+}
+
+const { status, class: className } = Astro.props;
+---
+
+<span class={cn('status', className)} data-tone={statusTone[status] ?? 'neutral'}>{status}</span>

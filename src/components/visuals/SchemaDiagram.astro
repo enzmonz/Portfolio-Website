@@ -1,0 +1,452 @@
+---
+/**
+ * Entity relationship diagram for a project's `schema` data.
+ *
+ * Renders up to three views and lets container queries pick one, so it adapts
+ * to the space it's given rather than to the viewport:
+ *   - wide SVG (full variant, ≥ 58rem): left-to-right flow
+ *   - tall SVG (card variant ≥ 30rem, full variant 36–58rem)
+ *   - stacked list (narrower than that)
+ *
+ * Hovering (or focusing, in the full variant) an entity highlights it and its
+ * relationships. Everything is readable without JS.
+ */
+import type { Project } from '@/data/projects';
+import { cn } from '@/lib/cn';
+import ErdSvg from './schema/ErdSvg.astro';
+import ErdList from './schema/ErdList.astro';
+import { buildDiagram, cardinalityWords } from './schema/layout';
+
+interface Props {
+  schema: NonNullable<Project['schema']>;
+  variant?: 'card' | 'full';
+  class?: string;
+}
+
+const { schema, variant = 'card', class: className } = Astro.props;
+const full = variant === 'full';
+
+const tall = buildDiagram(schema, 'tall');
+const wide = full ? buildDiagram(schema, 'wide') : null;
+// Unknown entities or relations can't be placed by hand-tuned layouts; fall back to the list.
+const hasSvg = Boolean(tall);
+const hasWide = Boolean(tall && wide);
+
+const counts = `${schema.entities.length} entities · ${schema.relations.length} relationships`;
+const caption = full ? schema.note : 'Simplified entity overview';
+---
+
+<figure
+  class={cn('erd', full ? 'erd--full' : 'erd--card', className)}
+  data-inview
+  data-has-svg={hasSvg ? '' : undefined}
+  data-has-wide={hasWide ? '' : undefined}
+>
+  <div class="sr-only">
+    <p>
+      {full ? `Entity relationship diagram: ${counts}.` : `Simplified entity overview: ${counts}.`}
+    </p>
+    <ul>
+      {
+        schema.relations.map((r) => (
+          <li>
+            {r.from} {r.label} {r.to} ({cardinalityWords(r.cardinality)}).
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+
+  {
+    full ? (
+      <div class="frame ticks">
+        <span class="tick tick-tl" />
+        <span class="tick tick-tr" />
+        <span class="tick tick-bl" />
+        <span class="tick tick-br" />
+
+        <div class="bar" aria-hidden="true">
+          <span class="bar-title">
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <ellipse cx="12" cy="5" rx="9" ry="3" />
+              <path d="M3 5V19A9 3 0 0 0 21 19V5" />
+              <path d="M3 12A9 3 0 0 0 21 12" />
+            </svg>
+            Entity relationship diagram
+          </span>
+          <span class="bar-meta">{counts}</span>
+        </div>
+
+        <div class="canvas">
+          {wide && (
+            <div class="view view--wide">
+              <ErdSvg diagram={wide} focusable />
+            </div>
+          )}
+          {tall && (
+            <div class="view view--tall">
+              <ErdSvg diagram={tall} focusable />
+            </div>
+          )}
+          <div class="view view--list">
+            <ErdList schema={schema} detailed />
+          </div>
+        </div>
+
+        <div class="legend" aria-hidden="true">
+          <span class="legend-item">
+            <span class="legend-badge" data-kind="pk">PK</span>
+            Primary key
+          </span>
+          <span class="legend-item">
+            <span class="legend-badge" data-kind="fk">FK</span>
+            Foreign key
+          </span>
+          <span class="legend-item legend-svg-only">
+            <svg viewBox="0 0 26 12" width="26" height="12" class="legend-mark">
+              <path d="M1 6H25M17 1V11" />
+            </svg>
+            One
+          </span>
+          <span class="legend-item legend-svg-only">
+            <svg viewBox="0 0 26 12" width="26" height="12" class="legend-mark">
+              <path d="M1 6H25M14 6L25 0M14 6L25 12" />
+            </svg>
+            Many
+          </span>
+          <span class="legend-hint legend-svg-only">
+            <span class="hint-pointer">Hover or focus an entity to trace its relationships</span>
+            <span class="hint-touch">Tap an entity to trace its relationships</span>
+          </span>
+        </div>
+      </div>
+    ) : (
+      <div class="canvas">
+        {tall && (
+          <div class="view view--tall">
+            <ErdSvg diagram={tall} />
+          </div>
+        )}
+        <div class="view view--list">
+          <ErdList schema={schema} />
+        </div>
+      </div>
+    )
+  }
+
+  <figcaption class="caption">{caption}</figcaption>
+</figure>
+
+<style>
+  .erd {
+    margin: 0;
+    min-width: 0;
+  }
+
+  /* ---------------- View switching (container queries) ---------------- */
+
+  .canvas {
+    container: erd-canvas / inline-size;
+    position: relative;
+  }
+
+  .view {
+    display: none;
+  }
+
+  .view--list {
+    display: block;
+  }
+
+  .erd--card .view--tall {
+    margin-inline: auto;
+    max-width: 38rem;
+  }
+
+  @container erd-canvas (min-width: 30rem) {
+    .erd--card[data-has-svg] .view--tall {
+      display: block;
+    }
+
+    .erd--card[data-has-svg] .view--list {
+      display: none;
+    }
+  }
+
+  /* ---------------- Full variant frame ---------------- */
+
+  .frame {
+    position: relative;
+    container: erd-frame / inline-size;
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    background: var(--bg-elevated);
+    --erd-halo: var(--bg-elevated);
+  }
+
+  .bar,
+  .legend {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    letter-spacing: 0.02em;
+    color: var(--fg-subtle);
+  }
+
+  .bar {
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .bar-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--fg-muted);
+  }
+
+  .frame .canvas {
+    padding: 1.25rem 1rem;
+  }
+
+  /* Fine drawing grid, faded toward the edges so it reads as a surface, not a texture. */
+  .frame .canvas::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: center;
+    -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 35%, transparent 100%);
+    mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 35%, transparent 100%);
+  }
+
+  .frame .view {
+    position: relative;
+  }
+
+  .legend {
+    gap: 0.5rem 1.25rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .legend-badge {
+    display: inline-grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1rem;
+    border: 1px solid;
+    border-radius: 0.25rem;
+    font-size: 0.5625rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  .legend-badge[data-kind='pk'] {
+    color: var(--accent-text);
+    background: var(--accent-soft);
+    border-color: var(--accent-line);
+  }
+
+  .legend-badge[data-kind='fk'] {
+    color: var(--info);
+    background: var(--info-soft);
+    border-color: color-mix(in oklab, var(--info) 38%, transparent);
+  }
+
+  .legend-mark {
+    flex: none;
+    fill: none;
+    stroke: var(--fg-subtle);
+    stroke-width: 1.25;
+    stroke-linecap: round;
+  }
+
+  .legend-svg-only {
+    display: none;
+  }
+
+  .legend-hint {
+    margin-left: auto;
+    color: var(--fg-subtle);
+  }
+
+  .hint-touch {
+    display: none;
+  }
+
+  @media (hover: none) {
+    .hint-pointer {
+      display: none;
+    }
+
+    .hint-touch {
+      display: inline;
+    }
+  }
+
+  @container erd-frame (min-width: 36rem) {
+    .erd--full[data-has-svg] .view--tall {
+      display: block;
+      margin-inline: auto;
+      max-width: 38rem;
+    }
+
+    .erd--full[data-has-svg] .view--list {
+      display: none;
+    }
+
+    .erd--full[data-has-svg] .legend-svg-only {
+      display: inline-flex;
+    }
+
+    .frame .canvas {
+      padding: 2rem 1.5rem;
+    }
+
+    .bar,
+    .legend {
+      padding-inline: 1.25rem;
+    }
+  }
+
+  @container erd-frame (min-width: 58rem) {
+    .erd--full[data-has-wide] .view--wide {
+      display: block;
+      margin-inline: auto;
+      max-width: 62rem;
+    }
+
+    .erd--full[data-has-wide] .view--tall {
+      display: none;
+    }
+
+    .frame .canvas {
+      padding: 2.75rem 2.5rem;
+    }
+  }
+
+  /* ---------------- Caption ---------------- */
+
+  .caption {
+    margin-top: 0.875rem;
+    max-width: 68ch;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+    color: var(--fg-subtle);
+    text-wrap: pretty;
+  }
+
+  .erd--card .caption {
+    margin-top: 0.75rem;
+  }
+
+  .erd--full .caption {
+    padding-inline: 0.25rem;
+  }
+</style>
+
+<script>
+  /**
+   * Hover / focus / tap an entity to highlight it, its relationships and the
+   * entities on their other ends. Purely visual; the diagram is complete without it.
+   */
+  function initDiagram(svg: SVGSVGElement) {
+    if (svg.dataset.erdReady) return;
+    svg.dataset.erdReady = '';
+
+    const entities = Array.from(svg.querySelectorAll<SVGGElement>('[data-entity]'));
+    const links = Array.from(svg.querySelectorAll<SVGGElement>('[data-link]'));
+    let current: string | null = null;
+    let pinned: string | null = null;
+
+    const apply = (id: string | null) => {
+      if (id === current) return;
+      current = id;
+      if (!id) {
+        delete svg.dataset.active;
+        for (const el of [...entities, ...links]) {
+          el.removeAttribute('data-lit');
+          el.removeAttribute('data-current');
+        }
+        return;
+      }
+      svg.dataset.active = id;
+      const related = new Set([id]);
+      for (const link of links) {
+        const on = link.dataset.from === id || link.dataset.to === id;
+        link.toggleAttribute('data-lit', on);
+        if (on) {
+          related.add(link.dataset.from ?? '');
+          related.add(link.dataset.to ?? '');
+        }
+      }
+      for (const entity of entities) {
+        const name = entity.dataset.entity ?? '';
+        entity.toggleAttribute('data-lit', related.has(name));
+        entity.toggleAttribute('data-current', name === id);
+      }
+    };
+
+    for (const entity of entities) {
+      const id = entity.dataset.entity ?? null;
+      entity.addEventListener('pointerenter', (e) => {
+        if (e.pointerType !== 'touch') apply(id);
+      });
+      entity.addEventListener('pointerleave', (e) => {
+        if (e.pointerType !== 'touch') apply(pinned);
+      });
+      entity.addEventListener('pointerdown', (e) => {
+        if (e.pointerType !== 'touch') return;
+        pinned = pinned === id ? null : id;
+        apply(pinned);
+      });
+      entity.addEventListener('focus', () => {
+        pinned = id;
+        apply(id);
+      });
+      entity.addEventListener('blur', () => {
+        pinned = null;
+        apply(null);
+      });
+    }
+
+    // Tapping empty canvas clears a pinned highlight.
+    svg.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch') return;
+      if ((e.target as Element).closest('[data-entity]')) return;
+      pinned = null;
+      apply(null);
+    });
+  }
+
+  document.querySelectorAll<SVGSVGElement>('[data-erd-svg]').forEach(initDiagram);
+</script>

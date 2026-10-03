@@ -1,0 +1,261 @@
+---
+/**
+ * Hero portrait in a pixel-cornered frame with an offset outline, soft glow,
+ * status tag and a subtle pointer tilt.
+ *
+ * The image is read from `site.profilePhoto.src` (a file under public/). If the
+ * file isn't there yet, an honest placeholder is shown instead — never a fake face.
+ */
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { site } from '@/data/site';
+import { cn } from '@/lib/cn';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+const { src, alt } = site.profilePhoto;
+const hasPhoto = existsSync(join(process.cwd(), 'public', src.replace(/^\/+/, '')));
+---
+
+<figure class={cn('photo', className)} data-tilt>
+  <div class="photo-offset" aria-hidden="true"></div>
+  <div class="photo-frame">
+    {
+      hasPhoto ? (
+        <img src={src} alt={alt} width="800" height="1000" loading="eager" decoding="async" fetchpriority="high" />
+      ) : (
+        <div class="photo-empty" role="img" aria-label="Profile photo placeholder">
+          <span class="photo-empty-mark" aria-hidden="true">
+            ENZO
+          </span>
+          <span class="photo-empty-hint" aria-hidden="true">
+            photo · public{src}
+          </span>
+        </div>
+      )
+    }
+    <span class="photo-scan" aria-hidden="true"></span>
+  </div>
+  <span class="px px-tl" aria-hidden="true"></span>
+  <span class="px px-tr" aria-hidden="true"></span>
+  <span class="px px-bl" aria-hidden="true"></span>
+  <span class="px px-br" aria-hidden="true"></span>
+  {
+    site.availability && (
+      <figcaption class="photo-tag">
+        <span class="live-dot" aria-hidden="true" />
+        <span>Available</span>
+        <span class="sr-only">: {site.availability}</span>
+      </figcaption>
+    )
+  }
+</figure>
+
+<style>
+  .photo {
+    --px: 10px;
+    position: relative;
+    margin: 0;
+    aspect-ratio: 4 / 5;
+    width: 100%;
+    transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    transition: transform 600ms var(--ease-out-expo);
+    transform-style: preserve-3d;
+  }
+
+  .photo-offset {
+    position: absolute;
+    inset: 0;
+    translate: 14px 14px;
+    border: 1px dashed color-mix(in oklab, var(--accent) 55%, transparent);
+    border-radius: 1.25rem;
+    transition: translate 600ms var(--ease-out-expo);
+  }
+
+  .photo:hover .photo-offset {
+    translate: 20px 20px;
+  }
+
+  .photo-frame {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 1.25rem;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    box-shadow:
+      var(--shadow-float),
+      0 30px 80px -40px var(--accent-glow);
+  }
+
+  .photo-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: scale 900ms var(--ease-out-expo);
+  }
+
+  .photo:hover .photo-frame img {
+    scale: 1.03;
+  }
+
+  /* Placeholder: pixel monogram on a fine grid */
+  .photo-empty {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 1rem;
+    background:
+      radial-gradient(closest-side, var(--accent-soft), transparent 85%),
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px) 0 0 / 22px 22px,
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px) 0 0 / 22px 22px,
+      var(--surface);
+  }
+
+  .photo-empty-mark {
+    font-family: var(--font-pixel);
+    font-size: clamp(3rem, 7vw, 5rem);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    color: var(--fg);
+    text-shadow: 0 0 30px var(--accent-glow);
+  }
+
+  .photo-empty-hint {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    color: var(--fg-subtle);
+  }
+
+  /* Slow scan line — a CRT nod, very faint */
+  .photo-scan {
+    position: absolute;
+    inset-inline: 0;
+    top: -20%;
+    height: 20%;
+    background: linear-gradient(to bottom, transparent, color-mix(in oklab, var(--accent) 9%, transparent), transparent);
+    animation: photo-scan 7s linear infinite;
+    pointer-events: none;
+  }
+
+  /* Pixel corners */
+  .px {
+    position: absolute;
+    width: var(--px);
+    height: var(--px);
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+
+  .px::after {
+    content: '';
+    position: absolute;
+    width: var(--px);
+    height: var(--px);
+    background: inherit;
+    opacity: 0.45;
+  }
+
+  .px-tl {
+    top: calc(var(--px) * -0.5);
+    left: calc(var(--px) * -0.5);
+  }
+  .px-tl::after {
+    left: var(--px);
+    top: var(--px);
+  }
+  .px-tr {
+    top: calc(var(--px) * -0.5);
+    right: calc(var(--px) * -0.5);
+  }
+  .px-tr::after {
+    right: var(--px);
+    top: var(--px);
+  }
+  .px-bl {
+    bottom: calc(var(--px) * -0.5);
+    left: calc(var(--px) * -0.5);
+  }
+  .px-bl::after {
+    left: var(--px);
+    bottom: var(--px);
+  }
+  .px-br {
+    bottom: calc(var(--px) * -0.5);
+    right: calc(var(--px) * -0.5);
+  }
+  .px-br::after {
+    right: var(--px);
+    bottom: var(--px);
+  }
+
+  .photo-tag {
+    position: absolute;
+    right: 1.25rem;
+    bottom: -1.0625rem;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 2.125rem;
+    padding-inline: 0.875rem;
+    border-radius: 999px;
+    border: 1px solid var(--accent-line);
+    background: color-mix(in oklab, var(--bg) 82%, transparent);
+    backdrop-filter: blur(8px);
+    font-family: var(--font-pixel);
+    font-size: 0.8125rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-text);
+    white-space: nowrap;
+  }
+
+  @keyframes photo-scan {
+    to {
+      top: 110%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .photo {
+      transform: none;
+    }
+    .photo-scan {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  // Pointer tilt (fine pointers only, motion allowed).
+  const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (fine && !still) {
+    document.querySelectorAll<HTMLElement>('[data-tilt]').forEach((el) => {
+      let frame = 0;
+      el.addEventListener('pointermove', (event) => {
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          const r = el.getBoundingClientRect();
+          const px = (event.clientX - r.left) / r.width - 0.5;
+          const py = (event.clientY - r.top) / r.height - 0.5;
+          el.style.setProperty('--tilt-y', `${(px * 7).toFixed(2)}deg`);
+          el.style.setProperty('--tilt-x', `${(-py * 7).toFixed(2)}deg`);
+        });
+      });
+      el.addEventListener('pointerleave', () => {
+        cancelAnimationFrame(frame);
+        el.style.removeProperty('--tilt-x');
+        el.style.removeProperty('--tilt-y');
+      });
+    });
+  }
+</script>

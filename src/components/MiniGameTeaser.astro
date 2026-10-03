@@ -1,0 +1,553 @@
+---
+/**
+ * Home-page teaser for the aim trainer (/mini-game). Editorial copy on one
+ * side, a decorative CSS mini-arena on the other: a pulsing target and a
+ * crosshair that drifts onto it on hover. Shows the visitor's stored personal
+ * best when there is one. No props.
+ */
+import LinkButton from '@/components/ui/LinkButton.astro';
+---
+
+<section id="mini-game" aria-labelledby="mini-game-title" class="mg relative section-y">
+  <div class="container-page mg-layout">
+    <div class="mg-copy">
+      <p class="eyebrow" data-reveal>
+        <span class="eyebrow-index">04</span>
+        <span>Mini game</span>
+      </p>
+      <h2 id="mini-game-title" class="mg-title" data-reveal style="--d: 1">
+        <span class="block">FPS aim</span>
+        <span class="block">trainer</span>
+      </h2>
+      <p class="mg-line" data-reveal style="--d: 2">A little side project for the FPS player in me.</p>
+
+      <ul class="mg-meta" data-reveal style="--d: 3" aria-label="Aim trainer details">
+        <li>3 modes</li>
+        <li>30s rounds</li>
+        <li>Canvas + TypeScript</li>
+        <li>Desktop · mouse</li>
+      </ul>
+
+      <p class="mg-pb" data-mg-pb hidden>
+        <span class="mg-pb-k">Your best</span>
+        <span class="mg-pb-mode" data-mg-pb-mode></span>
+        <span class="mg-pb-vals">
+          <span>Score <span class="mg-pb-v" data-mg-pb-score></span></span>
+          <span aria-hidden="true">·</span>
+          <span>Accuracy <span class="mg-pb-v" data-mg-pb-accuracy></span></span>
+          <span aria-hidden="true">·</span>
+          <span>Reaction <span class="mg-pb-v" data-mg-pb-reaction></span></span>
+        </span>
+      </p>
+
+      <div class="mg-cta" data-reveal style="--d: 4">
+        <LinkButton href="/mini-game" label="Play the aim trainer" variant="primary" trailing="right" data-magnetic />
+      </div>
+    </div>
+
+    <a href="/mini-game" class="mg-visual" tabindex="-1" aria-hidden="true" data-cursor="none" data-reveal style="--d: 2">
+      <div class="mg-frame ticks">
+        <span class="tick tick-tl"></span>
+        <span class="tick tick-tr"></span>
+        <span class="tick tick-bl"></span>
+        <span class="tick tick-br"></span>
+
+        <div class="mg-screen">
+          <div class="mg-gridbg"></div>
+          <span class="mg-progress"></span>
+
+          <div class="mg-hud">
+            <span class="mg-cell"><i>Score</i><b>000</b></span>
+            <span class="mg-cell mg-cell-c"><i>Time</i><b>30.0</b></span>
+            <span class="mg-cell mg-cell-r"><i>Accuracy</i><b>--%</b></span>
+          </div>
+
+          <div class="mg-target">
+            <span class="mg-pulse"></span>
+            <svg viewBox="-50 -50 100 100" class="mg-target-svg">
+              <circle r="30" class="mg-disc"></circle>
+              <circle r="29" class="mg-ring"></circle>
+              <circle r="16.5" class="mg-ring mg-ring-in"></circle>
+              <rect x="-4" y="-4" width="8" height="8" class="mg-dot"></rect>
+              <g class="mg-ticks">
+                <rect x="-1.25" y="-41" width="2.5" height="6"></rect>
+                <rect x="-1.25" y="35" width="2.5" height="6"></rect>
+                <rect x="-41" y="-1.25" width="6" height="2.5"></rect>
+                <rect x="35" y="-1.25" width="6" height="2.5"></rect>
+              </g>
+            </svg>
+            <span class="mg-spark" style="--sx: -1; --sy: -1"></span>
+            <span class="mg-spark" style="--sx: 1.2; --sy: -0.7"></span>
+            <span class="mg-spark" style="--sx: -1.3; --sy: 0.4"></span>
+            <span class="mg-spark" style="--sx: 0.9; --sy: 1"></span>
+            <span class="mg-spark" style="--sx: 0.1; --sy: -1.4"></span>
+            <span class="mg-spark" style="--sx: -0.4; --sy: 1.3"></span>
+            <span class="mg-plus">+1</span>
+          </div>
+
+          <div class="mg-xhair-track">
+            <svg class="mg-xhair" viewBox="0 0 32 32" shape-rendering="crispEdges">
+              <g class="mg-xhair-o">
+                <rect x="14" y="4" width="4" height="9"></rect>
+                <rect x="14" y="19" width="4" height="9"></rect>
+                <rect x="4" y="14" width="9" height="4"></rect>
+                <rect x="19" y="14" width="9" height="4"></rect>
+                <rect x="14" y="14" width="4" height="4"></rect>
+              </g>
+              <g class="mg-xhair-f">
+                <rect x="15" y="5" width="2" height="7"></rect>
+                <rect x="15" y="20" width="2" height="7"></rect>
+                <rect x="5" y="15" width="7" height="2"></rect>
+                <rect x="20" y="15" width="7" height="2"></rect>
+                <rect x="15" y="15" width="2" height="2"></rect>
+              </g>
+            </svg>
+          </div>
+
+          <div class="mg-hud-bottom">
+            <span><i>Hits</i> 0</span>
+            <span><i>Misses</i> 0</span>
+            <span><i>Avg</i> —</span>
+            <span class="mg-hud-mode">Classic · 30s</span>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+</section>
+
+<script>
+  import { firstStoredPB, formatPBParts } from '@/components/AimTrainer/storage';
+  import { MODES } from '@/components/AimTrainer/modes';
+
+  const el = document.querySelector<HTMLElement>('[data-mg-pb]');
+  const found = el ? firstStoredPB() : null;
+  if (el && found) {
+    const parts = formatPBParts(found.best);
+    const set = (selector: string, text: string) => {
+      const target = el.querySelector<HTMLElement>(selector);
+      if (target) target.textContent = text;
+    };
+    set('[data-mg-pb-mode]', MODES[found.mode].label);
+    set('[data-mg-pb-score]', parts.score);
+    set('[data-mg-pb-accuracy]', parts.accuracy);
+    set('[data-mg-pb-reaction]', parts.reaction);
+    el.hidden = false;
+  }
+</script>
+
+<style>
+  .mg-layout {
+    display: grid;
+    gap: 3rem;
+    align-items: center;
+  }
+
+  @media (width >= 64rem) {
+    .mg-layout {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: 4.5rem;
+    }
+  }
+
+  .mg-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mg-title {
+    margin-top: 1.5rem;
+    font-family: var(--font-pixel);
+    font-size: clamp(3.25rem, 5.6vw + 1rem, 6rem);
+    font-weight: 600;
+    line-height: 0.86;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: var(--fg);
+  }
+
+  .mg-title > span:last-child {
+    color: var(--accent-text);
+  }
+
+  .mg-line {
+    margin-top: 1.5rem;
+    max-width: 34ch;
+    font-size: clamp(1.0625rem, 0.35vw + 1rem, 1.25rem);
+    line-height: 1.55;
+    color: var(--fg-muted);
+  }
+
+  .mg-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin-top: 1.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--fg-subtle);
+  }
+
+  .mg-meta li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .mg-meta li::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    background: var(--fg-faint);
+  }
+
+  .mg-meta li:first-child::before {
+    background: var(--pixel);
+  }
+
+  .mg-pb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.375rem 0.625rem;
+    margin-top: 1.5rem;
+    padding-block: 0.75rem;
+    border-block: 1px solid var(--border);
+    font-size: 0.875rem;
+    color: var(--fg-muted);
+  }
+
+  .mg-pb-k {
+    font-family: var(--font-pixel);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-text);
+  }
+
+  .mg-pb-mode {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--fg-subtle);
+  }
+
+  .mg-pb-vals {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+  }
+
+  .mg-pb-v {
+    font-family: var(--font-pixel);
+    font-size: 1rem;
+    color: var(--fg);
+  }
+
+  .mg-cta {
+    margin-top: 2rem;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Decorative mini arena                                               */
+  /* ------------------------------------------------------------------ */
+
+  .mg-visual {
+    display: block;
+    cursor: pointer;
+  }
+
+  .mg-frame {
+    position: relative;
+  }
+
+  .mg-screen {
+    --arena-bg: var(--code-bg);
+    --arena-grid: rgb(255 255 255 / 0.045);
+    --tx: 64%;
+    --ty: 54%;
+
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 16 / 10;
+    border: 1px solid var(--border-strong);
+    border-radius: 0.875rem;
+    background: var(--arena-bg);
+    box-shadow: var(--shadow-float);
+    container-type: inline-size;
+    font-family: var(--font-pixel);
+    color: var(--text);
+  }
+
+  :global([data-theme='light']) .mg-screen {
+    --arena-bg: var(--surface-elevated);
+    --arena-grid: rgb(127 29 29 / 0.075);
+  }
+
+  .mg-gridbg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, var(--arena-grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--arena-grid) 1px, transparent 1px);
+    background-size: 5cqw 5cqw;
+    background-position: center;
+    mask-image: radial-gradient(ellipse 85% 85% at 50% 50%, #000 45%, transparent 100%);
+  }
+
+  .mg-progress {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    background: var(--pixel);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+
+  .mg-hud,
+  .mg-hud-bottom {
+    position: absolute;
+    inset-inline: 4cqw;
+    display: flex;
+    font-size: clamp(0.5625rem, 1.1cqw, 0.75rem);
+  }
+
+  .mg-hud {
+    top: 3.5cqw;
+    justify-content: space-between;
+  }
+
+  .mg-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6cqw;
+    min-width: 0;
+  }
+
+  .mg-cell-c {
+    align-items: center;
+  }
+
+  .mg-cell-r {
+    align-items: flex-end;
+  }
+
+  .mg-hud i,
+  .mg-hud-bottom i {
+    font-style: normal;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .mg-hud b {
+    font-size: clamp(1rem, 3.4cqw, 1.75rem);
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .mg-hud-bottom {
+    bottom: 0;
+    align-items: center;
+    gap: 3cqw;
+    height: 7.5cqw;
+    border-top: 1px solid color-mix(in oklab, var(--text) 9%, transparent);
+  }
+
+  .mg-hud-bottom i {
+    margin-right: 0.5em;
+  }
+
+  .mg-hud-mode {
+    margin-left: auto;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* Target */
+  .mg-target {
+    position: absolute;
+    left: var(--tx);
+    top: var(--ty);
+    width: 15cqw;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+  }
+
+  .mg-target-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    filter: drop-shadow(0 0 1.6cqw var(--accent-glow));
+    transition:
+      scale 500ms var(--ease-out-expo),
+      opacity 400ms var(--ease-out-quart);
+  }
+
+  .mg-disc {
+    fill: color-mix(in oklab, var(--pixel) 14%, var(--arena-bg));
+  }
+
+  .mg-ring {
+    fill: none;
+    stroke: var(--pixel);
+    stroke-width: 2.5;
+  }
+
+  .mg-ring-in {
+    stroke-width: 2.25;
+  }
+
+  .mg-dot,
+  .mg-ticks {
+    fill: var(--pixel);
+  }
+
+  .mg-ticks {
+    opacity: 0.75;
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+    transition: scale 500ms var(--ease-out-expo);
+  }
+
+  .mg-pulse {
+    position: absolute;
+    inset: 30%;
+    border: 2px solid var(--pixel);
+    border-radius: 999px;
+    opacity: 0;
+    animation: ping 2.4s var(--ease-out-quart) infinite;
+  }
+
+  .mg-spark {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0.7cqw;
+    height: 0.7cqw;
+    min-width: 3px;
+    min-height: 3px;
+    background: var(--pixel);
+    opacity: 0;
+  }
+
+  .mg-spark:nth-of-type(3n) {
+    background: var(--text);
+  }
+
+  .mg-plus {
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    translate: -50% 0;
+    font-size: clamp(0.6875rem, 1.6cqw, 0.9375rem);
+    color: var(--accent-text);
+    opacity: 0;
+    white-space: nowrap;
+  }
+
+  /* Crosshair: the track moves onto the target on hover; the svg wanders a little at rest */
+  .mg-xhair-track {
+    position: absolute;
+    left: var(--tx);
+    top: var(--ty);
+    width: 5cqw;
+    min-width: 22px;
+    aspect-ratio: 1;
+    translate: calc(-50% - 31cqw) calc(-50% + 9cqw);
+    transition: translate 850ms var(--ease-in-out-quart);
+  }
+
+  .mg-xhair {
+    width: 100%;
+    height: 100%;
+    animation: mg-wander 7s ease-in-out infinite;
+  }
+
+  .mg-xhair-o {
+    fill: var(--arena-bg);
+    opacity: 0.9;
+  }
+
+  .mg-xhair-f {
+    fill: var(--pixel);
+  }
+
+  @keyframes mg-wander {
+    0%,
+    100% {
+      translate: 0 0;
+    }
+    30% {
+      translate: 3cqw -2.5cqw;
+    }
+    60% {
+      translate: -2cqw -1cqw;
+    }
+    80% {
+      translate: 1.5cqw 1.5cqw;
+    }
+  }
+
+  @keyframes mg-burst {
+    0% {
+      opacity: 1;
+      transform: translate(0, 0);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(calc(var(--sx) * 6cqw), calc(var(--sy) * 6cqw));
+    }
+  }
+
+  @keyframes mg-float {
+    0% {
+      opacity: 0;
+      translate: -50% 0.5cqw;
+    }
+    25% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      translate: -50% -3cqw;
+    }
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .mg:hover .mg-xhair-track,
+    .mg:focus-within .mg-xhair-track {
+      translate: -50% -50%;
+    }
+
+    .mg:hover .mg-xhair,
+    .mg:focus-within .mg-xhair {
+      animation: none;
+    }
+
+    .mg:hover .mg-ticks,
+    .mg:focus-within .mg-ticks {
+      scale: 0.86;
+      transition-delay: 650ms;
+    }
+
+    .mg:hover .mg-spark,
+    .mg:focus-within .mg-spark {
+      animation: mg-burst 600ms var(--ease-out-quart) 800ms both;
+    }
+
+    .mg:hover .mg-plus,
+    .mg:focus-within .mg-plus {
+      animation: mg-float 900ms var(--ease-out-quart) 800ms both;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mg-xhair,
+    .mg-pulse {
+      animation: none;
+    }
+  }
+</style>

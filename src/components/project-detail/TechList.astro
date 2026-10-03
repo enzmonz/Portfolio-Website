@@ -1,0 +1,237 @@
+---
+/**
+ * Technology list for project detail pages: brand mark, name, note and an
+ * explicit status tag. Implemented items are solid with an accent check;
+ * partial items use the warning tone; planned items are dashed and muted
+ * throughout, so the difference never depends on colour alone.
+ */
+import Icon from '@/components/ui/Icon.astro';
+import TechIcon from '@/components/ui/TechIcon.astro';
+import type { Availability, TechItem } from '@/data/projects';
+import { cn } from '@/lib/cn';
+
+interface Props {
+  stack: TechItem[];
+  /**
+   * For design-stage projects with no code yet: "Implemented" would overstate
+   * it, so only partial / planned items are tagged.
+   */
+  design?: boolean;
+  class?: string;
+}
+
+const { stack, design = false, class: className } = Astro.props;
+
+const LABEL: Record<Availability, string> = {
+  implemented: 'Implemented',
+  partial: 'Partial',
+  planned: 'Planned',
+};
+
+const items = stack.map((item) => ({ ...item, status: item.status ?? ('implemented' as Availability) }));
+const count = (s: Availability) => items.filter((item) => item.status === s).length;
+const tally = (['implemented', 'partial', 'planned'] as const)
+  .map((s) => ({ s, n: count(s) }))
+  .filter(({ n }) => n > 0);
+const summary = design
+  ? tally.filter(({ s }) => s !== 'implemented').map(({ s, n }) => `${n} ${LABEL[s].toLowerCase()}`)
+  : tally.length === 1 && tally[0].s === 'implemented'
+    ? ['All implemented']
+    : tally.map(({ s, n }) => `${n} ${LABEL[s].toLowerCase()}`);
+const tagged = (status: Availability) => !(design && status === 'implemented');
+---
+
+<div class={cn('tl', className)}>
+  <p class="tl-summary" data-reveal>
+    <span>{items.length} {items.length === 1 ? 'technology' : 'technologies'}</span>
+    {
+      summary.map((part) => (
+        <>
+          <span class="tl-dot" aria-hidden="true">
+            ·
+          </span>
+          <span>{part}</span>
+        </>
+      ))
+    }
+  </p>
+
+  <ul class="tl-list">
+    {
+      items.map((item, i) => (
+        <li class="tl-row" data-status={item.status} data-reveal style={`--d: ${Math.min(i, 6)}`}>
+          <span class="tl-icon" aria-hidden="true">
+            <TechIcon name={item.name} size={16} />
+          </span>
+          <span class="tl-text">
+            <span class="tl-name">{item.name}</span>
+            {item.note && <span class="tl-note">{item.note}</span>}
+          </span>
+          {tagged(item.status) && (
+            <span class="tl-tag" data-status={item.status}>
+              {item.status === 'implemented' && <Icon name="check" size={12} strokeWidth={2.25} />}
+              {item.status === 'partial' && (
+                <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
+                  <circle cx="6" cy="6" r="4.25" fill="none" stroke="currentColor" stroke-width="1.5" />
+                  <path d="M6 1.75a4.25 4.25 0 0 1 0 8.5Z" fill="currentColor" />
+                </svg>
+              )}
+              {item.status === 'planned' && (
+                <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
+                  <circle
+                    cx="6"
+                    cy="6"
+                    r="4.25"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-dasharray="2 1.9"
+                  />
+                </svg>
+              )}
+              {LABEL[item.status]}
+            </span>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<style>
+  .tl-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+    margin-bottom: 1.25rem;
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    letter-spacing: 0.02em;
+  }
+
+  .tl-dot {
+    color: var(--fg-faint);
+  }
+
+  .tl-list {
+    border-top: 1px solid var(--border);
+  }
+
+  /* Phone: icon | text, tag under the text. sm+: icon | text | tag. */
+  .tl-row {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    grid-template-areas:
+      'icon text'
+      'icon tag';
+    column-gap: 1rem;
+    align-items: start;
+    padding-block: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tl-icon {
+    grid-area: icon;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 0.625rem;
+    background: var(--surface-2);
+    color: var(--fg-muted);
+  }
+
+  .tl-text {
+    grid-area: text;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+    min-height: 2.5rem;
+    justify-content: center;
+  }
+
+  .tl-name {
+    color: var(--fg);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+  }
+
+  .tl-note {
+    color: var(--fg-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .tl-tag {
+    grid-area: tag;
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    height: 1.5rem;
+    margin-top: 0.625rem;
+    padding-inline: 0.5rem 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .tl-tag :global(svg) {
+    flex: none;
+  }
+
+  .tl-tag[data-status='implemented'] :global(svg) {
+    color: var(--accent-text);
+  }
+
+  .tl-tag[data-status='partial'] {
+    border-color: color-mix(in oklab, var(--warn) 35%, transparent);
+    background: var(--warn-soft);
+    color: var(--warn);
+  }
+
+  .tl-tag[data-status='planned'] {
+    border: 1px dashed var(--border-hover);
+    background: transparent;
+    color: var(--fg-subtle);
+  }
+
+  /* Planned rows recede: dashed mark, muted name. */
+  .tl-row[data-status='planned'] .tl-icon {
+    border-style: dashed;
+    background: transparent;
+    color: var(--fg-subtle);
+  }
+
+  .tl-row[data-status='planned'] .tl-name {
+    color: var(--fg-muted);
+  }
+
+  .tl-row[data-status='planned'] .tl-note {
+    color: var(--fg-subtle);
+  }
+
+  @media (min-width: 40rem) {
+    .tl-row {
+      grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+      grid-template-areas: 'icon text tag';
+      align-items: center;
+      column-gap: 1.125rem;
+    }
+
+    .tl-tag {
+      margin-top: 0;
+    }
+  }
+</style>

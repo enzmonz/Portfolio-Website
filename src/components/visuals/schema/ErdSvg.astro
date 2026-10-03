@@ -1,0 +1,337 @@
+---
+/**
+ * One SVG rendering of the ERD (geometry from ./layout.ts). Used by
+ * SchemaDiagram, which decides which layout is visible at which width.
+ */
+import { strokeIcons } from '@/components/ui/icons';
+import { M, rowCenter, keyWords, type Diagram } from './layout';
+
+interface Props {
+  diagram: Diagram;
+  /** Entities become keyboard-focusable and labelled; otherwise the SVG is decorative. */
+  focusable?: boolean;
+  class?: string;
+}
+
+const { diagram, focusable = false, class: className } = Astro.props;
+const { entities, links } = diagram;
+
+const entityLabel = (e: Diagram['entities'][number]) =>
+  `${e.name} table. ${e.keys.map((k) => `${k.name}, ${keyWords(k.kind)}`).join('; ')}.`;
+
+// Text sits on a computed baseline so it centers the same in every browser.
+const base = (center: number, size: number) => Math.round((center + size * 0.35) * 10) / 10;
+const headCenter = M.head / 2;
+// Non-breaking spaces survive SVG whitespace collapsing between tspans.
+const NBSP = String.fromCharCode(160);
+---
+
+<svg
+  class:list={['erd-svg', className]}
+  viewBox={diagram.viewBox}
+  width={diagram.width}
+  height={diagram.height}
+  xmlns="http://www.w3.org/2000/svg"
+  data-erd-svg
+  {...focusable ? { role: 'group', 'aria-label': 'Entity relationship diagram' } : { 'aria-hidden': 'true', focusable: 'false' }}
+>
+  <g class="links" aria-hidden="true">
+    {
+      links.map((link, i) => (
+        <g class="link" data-link data-from={link.fromId} data-to={link.toId} style={`--d: ${i + 3}`}>
+          <path class="link-hit" d={link.d} />
+          <path class="link-line draw-line" d={link.d} pathLength="1" />
+          <path class="link-flow" d={link.d} />
+          <path class="link-marks" d={link.marks} />
+          <text class="link-label" x={link.label.x} y={link.label.y} text-anchor={link.label.anchor}><tspan class="link-verb">{link.label.verb}</tspan><tspan class="link-card">{`${NBSP}·${NBSP}${link.label.card}`}</tspan></text>
+        </g>
+      ))
+    }
+  </g>
+
+  <g class="entities">
+    {
+      entities.map((e, i) => {
+        const { x, y, w, h } = e.box;
+        const r = M.radius;
+        // Header shape: rounded top corners, square bottom.
+        const head = `M${x + 0.5} ${y + M.head}V${y + r}Q${x + 0.5} ${y + 0.5} ${x + r} ${y + 0.5}H${x + w - r}Q${x + w - 0.5} ${y + 0.5} ${x + w - 0.5} ${y + r}V${y + M.head}Z`;
+        return (
+          <g
+            class="entity"
+            data-entity={e.id}
+            {...(focusable ? { tabindex: '0', role: 'img', 'aria-label': entityLabel(e) } : {})}
+          >
+            <g class="entity-in" style={`--i: ${i}`}>
+              <rect class="entity-ring" x={x - 4} y={y - 4} width={w + 8} height={h + 8} rx={r + 4} />
+              <rect class="entity-body" x={x} y={y} width={w} height={h} rx={r} />
+              <path class="entity-head" d={head} />
+              <path class="entity-rule" d={`M${x} ${y + M.head + 0.5}H${x + w}`} />
+              <svg
+                class="entity-icon"
+                x={x + 11}
+                y={y + headCenter - 6.5}
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                set:html={strokeIcons.table}
+              />
+              <text class="entity-name" x={x + 31} y={base(y + headCenter, M.nameSize)}>{e.name}</text>
+              {e.keys.map((k, ki) => {
+                const cy = y + rowCenter(ki);
+                return (
+                  <g class="key" data-kind={k.kind.toLowerCase()}>
+                    <rect class="key-badge" x={x + 11} y={cy - 6.5} width="21" height="13" rx="3" />
+                    <text class="key-kind" x={x + 21.5} y={base(cy, M.badgeSize) + 0.4} text-anchor="middle">{k.kind}</text>
+                    <text class="key-name" x={x + 40} y={base(cy, M.keySize) - 0.6}>{k.name}</text>
+                  </g>
+                );
+              })}
+              <rect class="entity-edge" x={x + 0.5} y={y + 0.5} width={w - 1} height={h - 1} rx={r - 0.5} />
+            </g>
+          </g>
+        );
+      })
+    }
+  </g>
+</svg>
+
+<style>
+  .erd-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ---------------- Connectors ---------------- */
+
+  .link-hit {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 12;
+  }
+
+  .link-line,
+  .link-marks {
+    fill: none;
+    stroke: var(--fg-faint);
+    stroke-width: 1.25;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* Keeps the global .draw-line draw-in (this rule replaces its transition list). */
+  .link-line {
+    transition:
+      stroke-dashoffset 1400ms var(--ease-out-expo) calc(var(--d, 0) * 120ms + 150ms),
+      stroke 300ms var(--ease-out-quart),
+      opacity 300ms var(--ease-out-quart);
+  }
+
+  .link-marks {
+    transition: stroke 300ms var(--ease-out-quart);
+  }
+
+  .link-flow {
+    fill: none;
+    stroke: var(--accent-text);
+    stroke-width: 1.25;
+    stroke-linecap: round;
+    stroke-dasharray: 2 6;
+    opacity: 0;
+    transition: opacity 300ms var(--ease-out-quart);
+  }
+
+  .link-label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.01em;
+    paint-order: stroke;
+    stroke: var(--erd-halo, transparent);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+  }
+
+  .link-verb {
+    fill: var(--fg-muted);
+    transition: fill 300ms var(--ease-out-quart);
+  }
+
+  .link-card {
+    fill: var(--fg-subtle);
+  }
+
+  .link {
+    transition: opacity 300ms var(--ease-out-quart);
+  }
+
+  /* Labels and marks settle in after the lines draw (JS only; final state is visible). */
+  :global(html.js) .link-marks,
+  :global(html.js) .link-label {
+    opacity: 0;
+    transition:
+      opacity 600ms var(--ease-out-quart) calc(var(--d, 0) * 120ms + 650ms),
+      stroke 300ms var(--ease-out-quart);
+  }
+
+  :global(html.js) :global([data-visible='true']) .link-marks,
+  :global(html.js) :global([data-visible='true']) .link-label {
+    opacity: 1;
+  }
+
+  /* ---------------- Entities ---------------- */
+
+  .entity {
+    outline: none;
+    cursor: default;
+    transition: opacity 300ms var(--ease-out-quart);
+  }
+
+  :global(html.js) .entity-in {
+    opacity: 0;
+    transition: opacity 700ms var(--ease-out-expo);
+    transition-delay: calc(var(--i, 0) * 55ms + 60ms);
+  }
+
+  :global(html.js) :global([data-visible='true']) .entity-in {
+    opacity: 1;
+  }
+
+  .entity-body {
+    fill: var(--erd-fill, var(--surface));
+  }
+
+  .entity-head {
+    fill: var(--erd-head, var(--surface-2));
+  }
+
+  .entity-rule {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+
+  .entity-edge {
+    fill: none;
+    stroke: var(--border-strong);
+    stroke-width: 1;
+    transition: stroke 300ms var(--ease-out-quart);
+  }
+
+  .entity-ring {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    opacity: 0;
+  }
+
+  .entity:focus-visible .entity-ring {
+    opacity: 1;
+  }
+
+  .entity-icon {
+    stroke: var(--fg-subtle);
+    transition: stroke 300ms var(--ease-out-quart);
+  }
+
+  .entity-name {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    fill: var(--fg);
+  }
+
+  .key-badge {
+    stroke-width: 0.75;
+  }
+
+  .key-kind {
+    font-family: var(--font-mono);
+    font-size: 7.75px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  .key-name {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    fill: var(--fg-muted);
+  }
+
+  .key[data-kind='pk'] .key-badge {
+    fill: var(--accent-soft);
+    stroke: var(--accent-line);
+  }
+
+  .key[data-kind='pk'] .key-kind {
+    fill: var(--accent-text);
+  }
+
+  .key[data-kind='pk'] .key-name {
+    fill: var(--fg);
+  }
+
+  .key[data-kind='fk'] .key-badge {
+    fill: var(--info-soft);
+    stroke: color-mix(in oklab, var(--info) 38%, transparent);
+  }
+
+  .key[data-kind='fk'] .key-kind {
+    fill: var(--info);
+  }
+
+  /* ---------------- Highlight (set by SchemaDiagram's script) ---------------- */
+
+  .erd-svg[data-active] .entity:not([data-lit]),
+  .erd-svg[data-active] .link:not([data-lit]) {
+    opacity: 0.28;
+  }
+
+  .entity[data-lit] .entity-edge {
+    stroke: var(--border-hover);
+  }
+
+  .entity[data-current] .entity-edge {
+    stroke: var(--accent-line);
+  }
+
+  .entity[data-current] .entity-icon {
+    stroke: var(--accent-text);
+  }
+
+  .link[data-lit] .link-line,
+  .link[data-lit] .link-marks {
+    stroke: var(--accent-text);
+  }
+
+  .link[data-lit] .link-verb {
+    fill: var(--fg);
+  }
+
+  .link[data-lit] .link-flow {
+    opacity: 0.9;
+    animation: dash-flow 1.4s linear infinite;
+  }
+
+  .link[data-lit] .link-line {
+    opacity: 0.35;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .link[data-lit] .link-flow {
+      animation: none;
+      stroke-dasharray: none;
+    }
+
+    .link[data-lit] .link-line {
+      opacity: 1;
+    }
+  }
+</style>

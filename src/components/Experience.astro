@@ -1,0 +1,659 @@
+---
+/**
+ * 03 — Experience. A data-driven vertical timeline (src/data/experience.ts).
+ * Missing fields render as dashed "to be added" slots when site.showPlaceholders
+ * is true, and are omitted entirely when it is false.
+ */
+import { Image } from 'astro:assets';
+import Icon from '@/components/ui/Icon.astro';
+import SectionHeader from '@/components/ui/SectionHeader.astro';
+import TechChip from '@/components/ui/TechChip.astro';
+import mascot from '@/assets/brand/cinnabyte-mascot.png';
+import { experience } from '@/data/experience';
+import { getProject, type Project } from '@/data/projects';
+import { site } from '@/data/site';
+import { isPlaceholder } from '@/lib/links';
+
+const show: boolean = site.showPlaceholders;
+const pad = (n: number) => String(n).padStart(2, '0');
+
+const entries = experience.map((entry) => {
+  const projects = (entry.projects ?? [])
+    .map((slug) => getProject(slug))
+    .filter((p): p is Project => p !== undefined);
+  const hasDetails = entry.details.length > 0;
+  const hasTech = entry.tech.length > 0;
+  return {
+    entry,
+    titleId: `xp-${entry.id}`,
+    current: entry.status === 'Current',
+    url: isPlaceholder(entry.url) ? null : (entry.url as string),
+    projects,
+    showSummary: Boolean(entry.summary) || show,
+    showPeriod: Boolean(entry.period) || show,
+    showDetails: hasDetails || (show && Boolean(entry.detailsPlaceholder)),
+    showTech: hasTech || (show && Boolean(entry.techPlaceholder)),
+  };
+});
+---
+
+<section id="experience" aria-labelledby="experience-title" class="relative section-y overflow-x-clip">
+  <p class="xp-bg-word" aria-hidden="true">Experience</p>
+  <div class="container-page relative">
+    <div class="grid gap-14 lg:grid-cols-12 lg:gap-12">
+      <!-- Heading column (sticky on desktop) -->
+      <div class="lg:col-span-5">
+        <div class="lg:sticky lg:top-28">
+          <SectionHeader
+            index="03"
+            eyebrow="Experience"
+            title={`Where I've been <span class="text-fg-subtle">building.</span>`}
+            id="experience-title"
+            lede="Hands-on roles alongside my studies, from building products at a software startup to an engineering internship."
+          />
+
+          <div class="mt-10 max-w-sm border-t border-border pt-6" data-reveal style="--d: 3">
+            <p class="text-label text-fg-subtle">{pad(experience.length)} roles · most recent first</p>
+            <ul class="mt-4 flex flex-wrap gap-x-7 gap-y-3 text-sm text-fg-muted" aria-label="Timeline key">
+              <li class="flex items-center gap-2.5">
+                <span class="node-shape is-current is-key" aria-hidden="true"><span class="live-dot"></span></span>
+                Current role
+              </li>
+              <li class="flex items-center gap-2.5">
+                <span class="node-shape is-key" aria-hidden="true"><span class="node-hollow"></span></span>
+                Former role
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="lg:col-span-7">
+        <div class="xp-timeline" data-inview>
+          <span class="xp-rail" aria-hidden="true"></span>
+          <span class="xp-now" aria-hidden="true">
+            <span class="xp-now-mark"></span>
+            <span class="text-label tracking-[0.08em] text-fg-subtle uppercase">Now</span>
+          </span>
+
+          <ol class="flex flex-col gap-5 md:gap-6">
+            {
+              entries.map(({ entry, titleId, current, url, projects, showSummary, showPeriod, showDetails, showTech }, i) => (
+                <li class="xp-item" style={`--i: ${i}`}>
+                  <span class={current ? 'xp-node node-shape is-current' : 'xp-node node-shape'} aria-hidden="true">
+                    {current ? <span class="live-dot" /> : <span class="node-hollow" />}
+                  </span>
+                  <span class="xp-connector" aria-hidden="true" />
+
+                  <article
+                    class="xp-card pt-6 pb-2 sm:pt-7"
+                    aria-labelledby={titleId}
+                    data-reveal
+                    style={`--d: ${i}`}
+                  >
+                    <header class="flex items-start gap-4 sm:gap-5">
+                      <div class:list={['xp-logo', entry.logo && 'is-image']}>
+                        {entry.logo === 'cinnabyte' ? (
+                          <Image src={mascot} alt="Cinnabyte" width={44} densities={[1, 2, 3]} class="xp-mascot" />
+                        ) : (
+                          <span class="xp-monogram" aria-hidden="true">
+                            {entry.monogram}
+                          </span>
+                        )}
+                      </div>
+
+                      <div class="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-x-4 gap-y-2.5">
+                        <div class="min-w-0">
+                          <h3
+                            id={titleId}
+                            class="font-pixel text-[1.625rem] leading-none text-fg sm:text-[2rem]"
+                          >
+                            {url ? (
+                              <a href={url} target="_blank" rel="noopener noreferrer" class="xp-org-link">
+                                {entry.org}
+                                <Icon name="arrow-up-right" size={15} />
+                                <span class="sr-only"> (opens in a new tab)</span>
+                              </a>
+                            ) : (
+                              entry.org
+                            )}
+                          </h3>
+                          <p class="mt-1.5 text-[0.9375rem] text-fg-muted">{entry.role}</p>
+                        </div>
+                        <span class="status shrink-0" data-tone={current ? 'accent' : 'neutral'}>
+                          {entry.status}
+                        </span>
+                      </div>
+                    </header>
+
+                    {showSummary &&
+                      (entry.summary ? (
+                        <p class="mt-6 max-w-[62ch] text-[0.9375rem] leading-relaxed text-fg-muted sm:text-base">
+                          {entry.summary}
+                        </p>
+                      ) : (
+                        <p class="placeholder-slot mt-6">{entry.summaryPlaceholder ?? 'Summary to be added'}</p>
+                      ))}
+
+                    {(showPeriod || showDetails || showTech) && (
+                      <dl class="xp-spec mt-6">
+                        {showPeriod && (
+                          <div class="xp-row">
+                            <dt>Period</dt>
+                            <dd>
+                              {entry.period ? (
+                                <span class="font-mono text-[0.8125rem] leading-7 text-fg">{entry.period}</span>
+                              ) : (
+                                <span class="placeholder-slot xp-slot">Dates to be added</span>
+                              )}
+                            </dd>
+                          </div>
+                        )}
+                        {showDetails && (
+                          <div class="xp-row">
+                            <dt>Responsibilities</dt>
+                            <dd>
+                              {entry.details.length > 0 ? (
+                                <ul class="xp-details">
+                                  {entry.details.map((item) => (
+                                    <li>{item}</li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <span class="placeholder-slot xp-slot">{entry.detailsPlaceholder}</span>
+                              )}
+                            </dd>
+                          </div>
+                        )}
+                        {showTech && (
+                          <div class="xp-row">
+                            <dt>Stack</dt>
+                            <dd>
+                              {entry.tech.length > 0 ? (
+                                <ul class="flex flex-wrap gap-1.5">
+                                  {entry.tech.map((name) => (
+                                    <li>
+                                      <TechChip name={name} />
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <span class="placeholder-slot xp-slot">{entry.techPlaceholder}</span>
+                              )}
+                            </dd>
+                          </div>
+                        )}
+                      </dl>
+                    )}
+
+                    {projects.length > 0 && (
+                      <div class="xp-evidence mt-6 pt-5 pb-1">
+                        <div class="flex items-center justify-between gap-4">
+                          <p id={`${titleId}-built`} class="text-label text-fg-subtle">
+                            Built through {entry.org}
+                          </p>
+                          <span class="text-label text-fg-subtle" aria-hidden="true">
+                            {pad(projects.length)}
+                          </span>
+                        </div>
+                        <ul class="mt-3.5 flex flex-wrap gap-2" aria-labelledby={`${titleId}-built`}>
+                          {projects.map((project) => (
+                            <li>
+                              <a href={`/projects/${project.slug}`} class="xp-proj">
+                                <span class="xp-proj-index" aria-hidden="true">
+                                  {project.index}
+                                </span>
+                                <span>{project.shortTitle}</span>
+                                <Icon name="arrow-right" size={13} class="xp-proj-arrow" />
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </article>
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ---------------------------------------------------------------- */
+  /* Timeline geometry. All rail/node math hangs off these variables. */
+  /* ---------------------------------------------------------------- */
+  .xp-timeline {
+    --rail-x: 6px; /* rail centre, from the timeline's left edge */
+    --gutter: 1.75rem; /* card offset from the timeline's left edge */
+    --node: 13px;
+    --node-y: 44px; /* card padding-top + half the logo tile */
+    position: relative;
+    padding-top: 2.5rem;
+    padding-left: var(--gutter);
+  }
+
+  @media (width >= 40rem) {
+    .xp-timeline {
+      --rail-x: 13px;
+      --gutter: 3.5rem;
+      --node: 27px;
+      --node-y: 52px;
+    }
+  }
+
+  @media (width >= 64rem) {
+    .xp-timeline {
+      --node-y: 56px;
+    }
+  }
+
+  .xp-rail {
+    position: absolute;
+    top: 0.25rem;
+    bottom: 0;
+    left: calc(var(--rail-x) - 0.5px);
+    width: 1px;
+    background: linear-gradient(
+      to bottom,
+      var(--accent-line),
+      var(--border-strong) 18%,
+      var(--border-strong) 80%,
+      transparent
+    );
+    transform-origin: top;
+  }
+
+  /* "Now" cap at the top of the rail */
+  .xp-now {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .xp-now-mark {
+    width: 7px;
+    height: 7px;
+    margin-left: calc(var(--rail-x) - 3.5px);
+    rotate: 45deg;
+    border: 1px solid var(--accent-line);
+    background: var(--bg);
+  }
+
+  .xp-item {
+    position: relative;
+  }
+
+  /* Node shape (shared by the timeline and the key) */
+  .node-shape {
+    display: grid;
+    place-items: center;
+    width: var(--node, 1.25rem);
+    height: var(--node, 1.25rem);
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg);
+    flex: none;
+  }
+
+  .node-shape.is-current {
+    border-color: var(--accent-line);
+  }
+
+  .node-shape.is-key {
+    --node: 1.25rem;
+  }
+
+  .node-shape .live-dot {
+    width: 0.4375rem;
+    height: 0.4375rem;
+  }
+
+  .node-hollow {
+    width: 0.4375rem;
+    height: 0.4375rem;
+    border-radius: 999px;
+    border: 1.5px solid var(--fg-subtle);
+  }
+
+  .xp-node {
+    position: absolute;
+    z-index: 1;
+    top: calc(var(--node-y) - var(--node) / 2);
+    left: calc(var(--rail-x) - var(--gutter) - var(--node) / 2);
+    box-shadow: 0 0 0 4px var(--bg);
+    transition: border-color 300ms var(--ease-out-quart);
+  }
+
+  @media (width < 40rem) {
+    .xp-node {
+      box-shadow: 0 0 0 3px var(--bg);
+    }
+
+    .xp-node .live-dot,
+    .xp-node .node-hollow {
+      width: 0.3125rem;
+      height: 0.3125rem;
+    }
+
+    .xp-node .node-hollow {
+      border-width: 1px;
+    }
+  }
+
+  /* Dashed lead from node to card */
+  .xp-connector {
+    position: absolute;
+    top: calc(var(--node-y) - 0.5px);
+    left: calc(var(--rail-x) - var(--gutter) + var(--node) / 2 + 4px);
+    right: 100%;
+    height: 1px;
+    background-image: linear-gradient(to right, var(--border-hover) 55%, transparent 0);
+    background-size: 5px 1px;
+    transform-origin: left;
+    transition: opacity 300ms var(--ease-out-quart);
+    opacity: 0.8;
+  }
+
+  .xp-item:hover .xp-node {
+    border-color: var(--border-hover);
+  }
+
+  .xp-item:hover .xp-node.is-current {
+    border-color: var(--accent);
+  }
+
+  .xp-item:hover .xp-connector {
+    opacity: 1;
+  }
+
+  .xp-bg-word {
+    position: absolute;
+    bottom: 1rem;
+    left: -1.5rem;
+    font-family: var(--font-pixel);
+    font-size: clamp(5rem, 14vw, 13rem);
+    font-weight: 700;
+    line-height: 0.8;
+    text-transform: uppercase;
+    color: transparent;
+    -webkit-text-stroke: 1px color-mix(in oklab, var(--fg) 8%, transparent);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* Keep the hover border easing once the scroll-reveal transition takes over */
+  :global(html.js) .xp-card[data-reveal] {
+    transition:
+      opacity 900ms var(--ease-out-expo),
+      transform 900ms var(--ease-out-expo),
+      filter 900ms var(--ease-out-expo),
+      border-color 300ms var(--ease-out-quart);
+    transition-delay:
+      calc(var(--d, 0) * 80ms),
+      calc(var(--d, 0) * 80ms),
+      calc(var(--d, 0) * 80ms),
+      0ms;
+  }
+
+  /* ---------------- Motion: rail grows, nodes arrive in order ---------------- */
+  :global(html.js) .xp-rail {
+    transform: scaleY(0);
+    transition: transform 1600ms var(--ease-out-expo) 100ms;
+  }
+
+  :global(html.js) .xp-timeline[data-visible='true'] .xp-rail {
+    transform: scaleY(1);
+  }
+
+  :global(html.js) .xp-now,
+  :global(html.js) .xp-node {
+    opacity: 0;
+    scale: 0.4;
+    transition:
+      opacity 500ms var(--ease-out-quart),
+      scale 700ms var(--ease-out-expo),
+      border-color 300ms var(--ease-out-quart);
+    transition-delay: calc(var(--i, -1) * 300ms + 380ms);
+  }
+
+  :global(html.js) .xp-now {
+    scale: 1;
+    translate: 0 4px;
+    transition:
+      opacity 500ms var(--ease-out-quart),
+      translate 700ms var(--ease-out-expo);
+    transition-delay: 80ms;
+  }
+
+  :global(html.js) .xp-connector {
+    scale: 0 1;
+    transition:
+      scale 600ms var(--ease-out-expo),
+      opacity 300ms var(--ease-out-quart);
+    transition-delay: calc(var(--i, 0) * 300ms + 520ms);
+  }
+
+  :global(html.js) .xp-timeline[data-visible='true'] .xp-node {
+    opacity: 1;
+    scale: 1;
+  }
+
+  :global(html.js) .xp-timeline[data-visible='true'] .xp-now {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  :global(html.js) .xp-timeline[data-visible='true'] .xp-connector {
+    scale: 1 1;
+  }
+
+  /* ---------------- Card internals ---------------- */
+  .xp-logo {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    flex: none;
+    border-radius: 0.875rem;
+    border: 1px solid var(--border);
+    background-color: var(--surface-2);
+    background-image: radial-gradient(var(--grid-line) 1px, transparent 1px);
+    background-size: 5px 5px;
+    box-shadow: 0 1px 0 0 rgb(255 255 255 / 0.04) inset;
+  }
+
+  .xp-logo.is-image {
+    background-image: none;
+  }
+
+  /* Rendered at its generated size (44px, 1x/2x/3x) so pixels stay crisp; the
+     artwork's digits sit top-right, so nudge it to optically centre the monitor. */
+  .xp-mascot {
+    width: 2.75rem;
+    height: auto;
+    image-rendering: pixelated;
+    translate: 1px 1px;
+  }
+
+  .xp-monogram {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--fg-muted);
+  }
+
+  .xp-org-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    transition: color 200ms;
+  }
+
+  .xp-org-link:hover {
+    color: var(--accent-text);
+  }
+
+  /* Spec-sheet rows */
+  .xp-spec {
+    border-top: 1px solid var(--border);
+  }
+
+  .xp-row {
+    display: grid;
+    gap: 0.5rem;
+    padding-block: 0.875rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .xp-row:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  @media (width >= 40rem) {
+    .xp-row {
+      grid-template-columns: 8.75rem minmax(0, 1fr);
+      gap: 1.5rem;
+      align-items: start;
+    }
+  }
+
+  .xp-row dt {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.75rem;
+    letter-spacing: 0.02em;
+    color: var(--fg-subtle);
+  }
+
+  .xp-slot {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.75rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.5rem;
+    line-height: 1.25rem;
+  }
+
+  .xp-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 0.125rem;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--fg-muted);
+  }
+
+  .xp-details > li {
+    position: relative;
+    padding-left: 1.125rem;
+  }
+
+  .xp-details > li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.8em;
+    width: 0.5rem;
+    height: 1px;
+    background: var(--fg-subtle);
+  }
+
+  /* Evidence footer: projects built through this role */
+  .xp-evidence {
+    border-top: 1px dashed var(--border-strong);
+  }
+
+  /* Open timeline rows instead of boxed cards */
+  .xp-card {
+    position: relative;
+    border-top: 1px solid var(--border-strong);
+  }
+
+  .xp-card::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 0;
+    width: 3rem;
+    height: 1px;
+    background: var(--accent);
+    transform-origin: left;
+    scale: 1 1;
+    transition: width 600ms var(--ease-out-expo);
+  }
+
+  .xp-item:hover .xp-card::before {
+    width: 100%;
+  }
+
+  .xp-proj {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 2.25rem;
+    padding-inline: 0.75rem 0.6875rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    color: var(--fg-muted);
+    transition:
+      color 200ms var(--ease-out-quart),
+      border-color 200ms var(--ease-out-quart),
+      background-color 200ms var(--ease-out-quart);
+  }
+
+  /* Extend the hit area to ~44px without changing the visual size */
+  .xp-proj::after {
+    content: '';
+    position: absolute;
+    inset: -4px -2px;
+  }
+
+  .xp-proj:hover {
+    color: var(--fg);
+    border-color: var(--border-hover);
+    background: var(--surface-2);
+  }
+
+  .xp-proj-index {
+    padding-right: 0.5rem;
+    border-right: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 400;
+    color: var(--fg-subtle);
+    transition: color 200ms;
+  }
+
+  .xp-proj:hover .xp-proj-index {
+    color: var(--accent-text);
+  }
+
+  .xp-proj :global(.xp-proj-arrow) {
+    color: var(--fg-subtle);
+    transition:
+      translate 300ms var(--ease-out-expo),
+      color 200ms;
+  }
+
+  .xp-proj:hover :global(.xp-proj-arrow) {
+    translate: 2px 0;
+    color: var(--fg);
+  }
+</style>

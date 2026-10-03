@@ -1,0 +1,364 @@
+---
+/**
+ * 01 — Selected work. Four editorial "chapters" instead of a grid of cards:
+ * each opens with a hairline rule and mono coordinates, carries a huge
+ * outlined pixel numeral, and gets the composition its `presentation` asks
+ * for (src/data/projects.ts), in data order. Text and visuals alternate
+ * sides from chapter to chapter.
+ *
+ * Behind everything sits a very faint environment: large "WORK" pixel type,
+ * a few grid fragments and drifting pixel particles (all aria-hidden).
+ *
+ * The script at the bottom feeds pointer position to compositions marked
+ * [data-pj-pointer] as --px / --py (-1…1) for tilt and parallax. It only
+ * runs for a mouse on a hover-capable device without reduced motion.
+ */
+import SectionHeader from '@/components/ui/SectionHeader.astro';
+import { projects, type Project } from '@/data/projects';
+import FlagshipChapter from './projects/FlagshipChapter.astro';
+import MobileChapter from './projects/MobileChapter.astro';
+import SchemaChapter from './projects/SchemaChapter.astro';
+import StorefrontChapter from './projects/StorefrontChapter.astro';
+
+const chapters = {
+  flagship: FlagshipChapter,
+  schema: SchemaChapter,
+  mobile: MobileChapter,
+  storefront: StorefrontChapter,
+} satisfies Record<Project['presentation'], unknown>;
+
+const key = [
+  { tone: 'implemented', text: 'Built' },
+  { tone: 'partial', text: 'Partial' },
+  { tone: 'planned', text: 'Planned' },
+];
+
+/* Environment, placed by hand so it stays in the margins. x / y in %, size in px, times in s. */
+const particles = [
+  { x: 3, y: 3, s: 4, t: 19, d: -4, o: 0.35 },
+  { x: 95, y: 6, s: 6, t: 24, d: -11, o: 0.22, hollow: true },
+  { x: 8, y: 15, s: 3, t: 17, d: -9, o: 0.4 },
+  { x: 97, y: 21, s: 4, t: 22, d: -2, o: 0.3 },
+  { x: 2, y: 33, s: 6, t: 26, d: -15, o: 0.2, hollow: true },
+  { x: 92, y: 39, s: 3, t: 18, d: -6, o: 0.38 },
+  { x: 6, y: 48, s: 4, t: 21, d: -13, o: 0.3 },
+  { x: 96, y: 56, s: 5, t: 25, d: -8, o: 0.24, hollow: true },
+  { x: 49, y: 44, s: 3, t: 20, d: -17, o: 0.26 },
+  { x: 3, y: 66, s: 5, t: 23, d: -5, o: 0.28 },
+  { x: 93, y: 74, s: 3, t: 19, d: -12, o: 0.36 },
+  { x: 7, y: 85, s: 6, t: 27, d: -20, o: 0.2, hollow: true },
+  { x: 55, y: 92, s: 4, t: 21, d: -3, o: 0.3 },
+  { x: 97, y: 95, s: 4, t: 18, d: -10, o: 0.32 },
+];
+
+const fragments = [
+  { top: '2%', right: '-4rem', w: '36rem', h: '24rem' },
+  { top: '27%', left: '-7rem', w: '30rem', h: '30rem' },
+  { top: '55%', right: '-6rem', w: '32rem', h: '26rem' },
+  { top: '80%', left: '18%', w: '34rem', h: '20rem' },
+];
+
+const fragmentStyle = (f: (typeof fragments)[number]) =>
+  [`--top: ${f.top}`, `--w: ${f.w}`, `--h: ${f.h}`, f.left ? `--left: ${f.left}` : '', f.right ? `--right: ${f.right}` : '']
+    .filter(Boolean)
+    .join('; ');
+---
+
+<section id="projects" aria-labelledby="projects-title" class="pj section-y">
+  <div class="pj-env" aria-hidden="true">
+    <span class="pj-word">WORK</span>
+    {fragments.map((f) => <span class="pj-frag" style={fragmentStyle(f)} />)}
+    {
+      particles.map((p) => (
+        <span
+          class="pj-px"
+          data-hollow={p.hollow ? '' : undefined}
+          style={`--x: ${p.x}%; --y: ${p.y}%; --s: ${p.s}px; --t: ${p.t}s; --delay: ${p.d}s; --o: ${p.o}`}
+        />
+      ))
+    }
+  </div>
+
+  <div class="container-page">
+    <div class="pj-top">
+      <SectionHeader
+        index="01"
+        eyebrow="Selected work"
+        id="projects-title"
+        title={`Practical software, <span class="text-fg-subtle">from schema to screen.</span>`}
+        lede="Four projects across internal tools, database design, mobile and e-commerce. Each one marks what's built and what's still planned."
+      />
+
+      <div class="pj-key" data-reveal style="--d: 3">
+        <p class="text-label tracking-[0.08em] text-fg-subtle uppercase" id="projects-key">Key</p>
+        <ul class="pj-key-list" aria-labelledby="projects-key">
+          {
+            key.map((item) => (
+              <li class="pj-key-item">
+                <span class="pj-swatch" data-tone={item.tone} aria-hidden="true" />
+                {item.text}
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+
+    <ol class="pj-list" role="list" aria-label="Projects">
+      {
+        projects.map((project) => {
+          const ProjectChapter = chapters[project.presentation];
+          return (
+            <li class="pj-item">
+              <ProjectChapter project={project} total={projects.length} />
+            </li>
+          );
+        })
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .pj {
+    position: relative;
+    isolation: isolate;
+    /* Compositions bleed toward the viewport edges; never into a horizontal scroll. */
+    overflow-x: clip;
+  }
+
+  .pj-top {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  @media (min-width: 64rem) {
+    .pj-top {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 4rem;
+    }
+  }
+
+  .pj-list {
+    display: grid;
+    row-gap: clamp(4.5rem, 7vw, 6.5rem);
+    margin-top: 3.5rem;
+  }
+
+  @media (min-width: 48rem) {
+    .pj-list {
+      margin-top: 4.5rem;
+    }
+  }
+
+  .pj-item {
+    min-width: 0;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Environment                                                       */
+  /* ---------------------------------------------------------------- */
+
+  .pj-env {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .pj-word {
+    position: absolute;
+    top: clamp(0.5rem, 3vw, 2.5rem);
+    right: -0.05em;
+    font-family: var(--font-pixel);
+    font-size: clamp(7rem, 25vw, 24rem);
+    font-weight: 700;
+    line-height: 0.78;
+    letter-spacing: 0;
+    white-space: nowrap;
+    color: color-mix(in oklab, var(--fg) 2%, transparent);
+    -webkit-text-stroke: 1px color-mix(in oklab, var(--fg) 5.5%, transparent);
+    user-select: none;
+  }
+
+  /* Dark ink on rose paper reads stronger: pull the light theme back. */
+  :global([data-theme='light']) .pj-word {
+    color: color-mix(in oklab, var(--fg) 1.2%, transparent);
+    -webkit-text-stroke-color: color-mix(in oklab, var(--fg) 4.5%, transparent);
+  }
+
+  .pj-frag {
+    position: absolute;
+    top: var(--top);
+    left: var(--left, auto);
+    right: var(--right, auto);
+    width: var(--w);
+    height: var(--h);
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 32px 32px;
+    -webkit-mask-image: radial-gradient(closest-side, #000 25%, transparent);
+    mask-image: radial-gradient(closest-side, #000 25%, transparent);
+  }
+
+  .pj-px {
+    position: absolute;
+    top: var(--y);
+    left: var(--x);
+    width: var(--s);
+    height: var(--s);
+    background: var(--pixel);
+    opacity: var(--o);
+    animation: pj-drift var(--t) linear var(--delay) infinite;
+  }
+
+  .pj-px[data-hollow] {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--pixel);
+  }
+
+  @keyframes pj-drift {
+    0% {
+      translate: 0 0;
+      opacity: 0;
+    }
+    15%,
+    80% {
+      opacity: var(--o);
+    }
+    100% {
+      translate: 1.25rem -7.5rem;
+      opacity: 0;
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Key: mirrors the TechChip states used in every chapter            */
+  /* ---------------------------------------------------------------- */
+
+  .pj-key {
+    display: none;
+  }
+
+  @media (min-width: 48rem) {
+    .pj-key {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex: none;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .pj-key {
+      padding-bottom: 0.375rem;
+    }
+  }
+
+  .pj-key-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.25rem;
+  }
+
+  .pj-key-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.01em;
+  }
+
+  .pj-swatch {
+    position: relative;
+    width: 1.375rem;
+    height: 0.75rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    background: var(--surface-2);
+  }
+
+  .pj-swatch[data-tone='partial']::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 0.1875rem;
+    width: 0.3125rem;
+    height: 0.3125rem;
+    border-radius: 999px;
+    background: var(--warn);
+    transform: translateY(-50%);
+  }
+
+  .pj-swatch[data-tone='planned'] {
+    border-style: dashed;
+    background: transparent;
+  }
+</style>
+
+<script>
+  /**
+   * Pointer → --px / --py (-1…1) on each [data-pj-pointer] zone, for tilt and
+   * parallax in the chapter compositions. Reads and writes happen once per
+   * animation frame. Mouse only, hover-capable devices only, never with
+   * reduced motion; on leave the values ease back to 0 through CSS.
+   */
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const clamp = (v: number) => Math.max(-1, Math.min(1, v));
+
+  function bindPointer(zone: HTMLElement) {
+    if (zone.dataset.pjBound !== undefined) return;
+    zone.dataset.pjBound = '';
+
+    let frame = 0;
+    let clientX = 0;
+    let clientY = 0;
+    let inside = false;
+
+    const flush = () => {
+      frame = 0;
+      if (!inside) {
+        zone.style.setProperty('--px', '0');
+        zone.style.setProperty('--py', '0');
+        delete zone.dataset.pointer;
+        return;
+      }
+      const rect = zone.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const x = clamp(((clientX - rect.left) / rect.width) * 2 - 1);
+      const y = clamp(((clientY - rect.top) / rect.height) * 2 - 1);
+      zone.style.setProperty('--px', x.toFixed(3));
+      zone.style.setProperty('--py', y.toFixed(3));
+      zone.dataset.pointer = '';
+    };
+
+    const queue = () => {
+      if (!frame) frame = requestAnimationFrame(flush);
+    };
+
+    zone.addEventListener('pointermove', (event) => {
+      if (event.pointerType !== 'mouse' || !finePointer.matches || reducedMotion.matches) return;
+      inside = true;
+      clientX = event.clientX;
+      clientY = event.clientY;
+      queue();
+    });
+
+    zone.addEventListener('pointerleave', () => {
+      if (!inside) return;
+      inside = false;
+      queue();
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-pj-pointer]').forEach(bindPointer);
+</script>

@@ -1,0 +1,341 @@
+---
+/**
+ * Full-width visual preview under the project header. The treatment follows
+ * `project.presentation`:
+ *   - flagship / storefront → screenshot Gallery
+ *   - mobile → interactive BookingPhone beside phone-sized screenshot slots
+ *   - schema → full SchemaDiagram, then slots for the design documents
+ * A project without screenshots or a dedicated visual falls back to slots.
+ */
+import Gallery from '@/components/ui/Gallery.astro';
+import ImagePlaceholder from '@/components/ui/ImagePlaceholder.astro';
+import BookingPhone from '@/components/visuals/BookingPhone.astro';
+import SchemaDiagram from '@/components/visuals/SchemaDiagram.astro';
+import type { Project } from '@/data/projects';
+import { site } from '@/data/site';
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+
+const slots = site.showPlaceholders ? (project.imagePlaceholders ?? []) : [];
+const mode =
+  project.presentation === 'mobile'
+    ? 'mobile'
+    : project.presentation === 'schema' && project.schema
+      ? 'schema'
+      : project.images.length > 0
+        ? 'gallery'
+        : 'slots';
+
+// Theme pairs (same caption, dark + light) are one slide in the Gallery.
+const shots = new Set(project.images.map((image) => `${image.kind}:${image.caption ?? image.src}`)).size;
+const pending = (n: number) => `${n} to be added`;
+
+const hint =
+  mode === 'gallery'
+    ? `${shots} ${shots === 1 ? 'screenshot' : 'screenshots'}`
+    : mode === 'schema'
+      ? 'Simplified entity overview'
+      : mode === 'slots' && slots.length
+        ? pending(slots.length)
+        : null;
+---
+
+<section class="pv container-page" aria-label={`${project.shortTitle} preview`}>
+  <div class="pv-head" data-reveal>
+    <span class="pv-label" aria-hidden="true">Preview</span>
+    <span class="pv-rule" aria-hidden="true"></span>
+    {hint && <span class="pv-hint">{hint}</span>}
+    {
+      mode === 'mobile' && (
+        <span class="pv-hint js-only">
+          <span class="pv-hint-long">Select a step to switch screens</span>
+          <span class="pv-hint-short">Interactive · 4 screens</span>
+        </span>
+      )
+    }
+  </div>
+
+  <div class="pv-body" data-reveal style="--d: 1">
+    {
+      mode === 'gallery' && (
+        <>
+          <Gallery images={project.images} label={`${project.shortTitle} screenshots`} idPrefix="detail" />
+          {slots.length > 0 && (
+            <ul class="pv-slots mt-8" data-kind="desktop" aria-label="Screenshots to be added">
+              {slots.map((label) => (
+                <li>
+                  <ImagePlaceholder label={label} kind="desktop" />
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )
+    }
+
+    {
+      mode === 'mobile' && (
+        <div class="pv-stage ticks">
+          <span class="tick tick-tl" aria-hidden="true" />
+          <span class="tick tick-tr" aria-hidden="true" />
+          <span class="tick tick-bl" aria-hidden="true" />
+          <span class="tick tick-br" aria-hidden="true" />
+
+          <div class="pv-stage-grid" data-has-slots={slots.length > 0 ? '' : undefined}>
+            <div class="pv-phone">
+              <BookingPhone interactive size="lg" idPrefix="detail-booking" />
+            </div>
+
+            {slots.length > 0 && (
+              <div class="pv-shots">
+                <p class="pv-shots-head">
+                  <span>App screenshots</span>
+                  <span class="pv-shots-count">{pending(slots.length)}</span>
+                </p>
+                <ul class="pv-slots" data-kind="mobile" aria-label="App screenshots to be added">
+                  {slots.map((label) => (
+                    <li>
+                      <ImagePlaceholder label={label} kind="mobile" />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    {
+      mode === 'schema' && project.schema && (
+        <>
+          <SchemaDiagram schema={project.schema} variant="full" />
+          {slots.length > 0 && (
+            <div class="mt-10">
+              <p class="pv-shots-head">
+                <span>Design documents</span>
+                <span class="pv-shots-count">{pending(slots.length)}</span>
+              </p>
+              <ul class="pv-slots" data-kind="desktop" aria-label="Design documents to be added">
+                {slots.map((label) => (
+                  <li>
+                    <ImagePlaceholder label={label} kind="desktop" />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
+      )
+    }
+
+    {
+      mode === 'slots' && slots.length > 0 && (
+        <ul class="pv-slots" data-kind="desktop" aria-label="Screenshots to be added">
+          {slots.map((label) => (
+            <li>
+              <ImagePlaceholder label={label} kind="desktop" />
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .pv {
+    padding-bottom: 5rem;
+  }
+
+  /* Drawing-sheet title row: label, rule, note. */
+  .pv-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    letter-spacing: 0.02em;
+  }
+
+  .pv-label {
+    flex: none;
+    color: var(--fg-subtle);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .pv-rule {
+    flex: 1;
+    min-width: 1.5rem;
+    height: 1px;
+    background: linear-gradient(to right, var(--border-strong), var(--border) 60%, transparent);
+  }
+
+  .pv-hint {
+    min-width: 0;
+    color: var(--fg-subtle);
+    text-align: right;
+  }
+
+  .pv-hint-long {
+    display: none;
+  }
+
+  @media (min-width: 40rem) {
+    .pv-hint-long {
+      display: inline;
+    }
+
+    .pv-hint-short {
+      display: none;
+    }
+  }
+
+  :global(html:not(.js)) .js-only {
+    display: none;
+  }
+
+  /* ---------------- Mobile stage ---------------- */
+
+  .pv-stage {
+    isolation: isolate;
+    padding: 2rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    background: var(--bg-elevated);
+  }
+
+  .pv-stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: -1px -1px;
+    mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 25%, transparent 100%);
+    pointer-events: none;
+  }
+
+  .pv-stage-grid {
+    display: grid;
+    gap: 3rem;
+  }
+
+  .pv-phone {
+    width: 100%;
+    max-width: 22rem;
+    margin-inline: auto;
+  }
+
+  .pv-shots {
+    min-width: 0;
+  }
+
+  .pv-shots-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    letter-spacing: 0.02em;
+  }
+
+  .pv-shots-count {
+    color: var(--fg-subtle);
+  }
+
+  /* ---------------- Placeholder slots ---------------- */
+
+  /* Narrow screens: a snap row, so each slot keeps a readable size. */
+  .pv-slots {
+    --slot-w: 82%;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: var(--slot-w);
+    gap: 1rem;
+    margin-inline: -0.25rem;
+    padding: 0.25rem 0.25rem 0.75rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 0.25rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+
+  .pv-slots > li {
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+
+  .pv-slots[data-kind='mobile'] {
+    --slot-w: 58%;
+  }
+
+  @media (min-width: 40rem) {
+    .pv-stage {
+      padding: 2.5rem;
+    }
+
+    .pv-slots[data-kind='desktop'] {
+      --slot-w: 52%;
+    }
+
+    .pv-slots[data-kind='mobile'] {
+      grid-auto-flow: row;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-inline: 0;
+      padding: 0;
+      overflow: visible;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .pv {
+      padding-bottom: 7rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .pv-stage {
+      padding: 3.5rem 3rem;
+    }
+
+    .pv-stage-grid[data-has-slots] {
+      grid-template-columns: 21rem minmax(0, 1fr);
+      gap: 2.5rem;
+    }
+
+    /* Dashed divider between the recreation and the real-screenshot slots. */
+    .pv-stage-grid[data-has-slots] .pv-shots {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-left: 2.5rem;
+      border-left: 1px dashed var(--border-strong);
+    }
+
+    .pv-slots[data-kind='desktop'] {
+      grid-auto-flow: row;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-inline: 0;
+      padding: 0;
+      overflow: visible;
+    }
+  }
+</style>

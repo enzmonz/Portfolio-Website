@@ -1,0 +1,71 @@
+---
+/**
+ * Environmental layer behind every page: a few drifting "pixels" in the theme's
+ * pixel colour. Deterministic positions (no layout shift, no JS). Static under
+ * reduced motion, hidden on very small screens.
+ */
+const pixels = [
+  [6, 18, 3, 0], [14, 72, 2, 3], [22, 38, 4, 7], [31, 88, 2, 1], [38, 12, 3, 5],
+  [47, 61, 2, 9], [55, 30, 3, 2], [63, 82, 4, 6], [71, 47, 2, 4], [78, 15, 3, 8],
+  [86, 68, 2, 0], [93, 34, 3, 5], [9, 52, 2, 6], [59, 8, 2, 3], [44, 93, 3, 1], [97, 90, 2, 7],
+];
+---
+
+<div class="ambient" aria-hidden="true">
+  {
+    pixels.map(([x, y, s, d]) => (
+      <span class="ambient-px" style={`--x:${x}%;--y:${y}%;--s:${s}px;--d:${d}`} />
+    ))
+  }
+</div>
+
+<style>
+  .ambient {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .ambient-px {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: var(--s);
+    height: var(--s);
+    background: var(--pixel);
+    opacity: 0;
+    animation: ambient-drift 14s ease-in-out infinite;
+    animation-delay: calc(var(--d) * -1.7s);
+  }
+
+  @keyframes ambient-drift {
+    0%,
+    100% {
+      opacity: 0;
+      translate: 0 0;
+    }
+    30%,
+    70% {
+      opacity: 0.32;
+    }
+    50% {
+      translate: 0 -28px;
+      opacity: 0.4;
+    }
+  }
+
+  @media (width < 40rem) {
+    .ambient {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ambient-px {
+      animation: none;
+      opacity: 0.2;
+    }
+  }
+</style>

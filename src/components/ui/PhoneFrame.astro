@@ -1,0 +1,121 @@
+---
+/**
+ * Slim phone bezel for real mobile screenshots (default screen ratio 780 × 1688).
+ * The slotted image fills the screen (object-fit: cover). Width comes from the
+ * parent or from `class` (e.g. `w-64`); the height follows the screen ratio.
+ * Override the ratio with the `--screen-ratio` custom property if needed.
+ */
+import { cn } from '@/lib/cn';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+---
+
+<div class={cn('phone-frame', className)}>
+  <div class="phone-screen">
+    <span class="phone-island" aria-hidden="true"></span>
+    <slot />
+  </div>
+</div>
+
+<style>
+  .phone-frame {
+    --phone-bezel: 7px;
+    --phone-radius: 2.25rem;
+    position: relative;
+    padding: var(--phone-bezel);
+    border-radius: var(--phone-radius);
+    /* Hardware stays dark in both themes. */
+    background: linear-gradient(160deg, #1c1c20, var(--code-bg) 38%);
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.09),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.14),
+      0 0 0 1px var(--border-strong),
+      var(--shadow-float);
+  }
+
+  /* Side buttons: power on the right, volume on the left. */
+  .phone-frame::before,
+  .phone-frame::after {
+    content: '';
+    position: absolute;
+    width: 2px;
+    background: #26262b;
+    pointer-events: none;
+  }
+
+  .phone-frame::before {
+    right: -2px;
+    top: 24%;
+    height: 11%;
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* Two volume keys from one element. */
+  .phone-frame::after {
+    left: -2px;
+    top: 20%;
+    height: 15%;
+    border-radius: 2px 0 0 2px;
+    background: linear-gradient(to bottom, #26262b 0 44%, transparent 44% 56%, #26262b 56%);
+  }
+
+  .phone-screen {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: var(--screen-ratio, 780 / 1688);
+    border-radius: calc(var(--phone-radius) - var(--phone-bezel));
+    background: var(--surface-2);
+    /* Keeps the rounded clip crisp in Safari while images decode. */
+    isolation: isolate;
+  }
+
+  /* Hairline where glass meets bezel. */
+  .phone-screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+    pointer-events: none;
+  }
+
+  .phone-island {
+    position: absolute;
+    top: max(0.4375rem, 1.6%);
+    left: 50%;
+    z-index: 3;
+    width: 29%;
+    aspect-ratio: 3.4;
+    border-radius: 999px;
+    background: #000;
+    transform: translateX(-50%);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.04);
+  }
+
+  /* Camera lens */
+  .phone-island::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 12%;
+    width: 0.3125rem;
+    height: 0.3125rem;
+    border-radius: 999px;
+    background: radial-gradient(circle at 35% 35%, #2b3140, #0b0d12 70%);
+    transform: translateY(-50%);
+  }
+
+  .phone-screen :global(img) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+</style>

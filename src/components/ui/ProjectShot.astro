@@ -1,0 +1,56 @@
+---
+/**
+ * Optimized project screenshot (AVIF + WebP with a PNG fallback).
+ *
+ * Themed screenshots (`image.theme`) only show in the matching site theme, so a
+ * dark/light pair can be rendered side by side and the right one appears.
+ * The <picture> is `display: contents`, so sizing classes passed via `class`
+ * (applied to the <img>) behave as if the image were a direct child.
+ */
+import { Picture } from 'astro:assets';
+import type { ProjectImage } from '@/data/projects';
+import { projectImage } from '@/lib/images';
+import { cn } from '@/lib/cn';
+
+interface Props {
+  image: ProjectImage;
+  /** Rendered width hint for the browser. Defaults suit a full-width desktop shot / a phone-sized mobile shot. */
+  sizes?: string;
+  loading?: 'eager' | 'lazy';
+  /** Applied to the <img>. */
+  class?: string;
+  widths?: number[];
+  fetchpriority?: 'high' | 'auto';
+}
+
+const { image, sizes, loading = 'lazy', class: className, widths, fetchpriority } = Astro.props;
+
+const src = projectImage(image.src);
+const isMobile = image.kind === 'mobile';
+
+const requested = widths ?? (isMobile ? [240, 390, 560, 780] : [480, 768, 1080, 1440]);
+// Never upscale: drop widths larger than the source, and always offer the source width.
+const usable = Array.from(new Set([...requested.filter((w) => w < src.width), Math.min(Math.max(...requested), src.width)])).sort(
+  (a, b) => a - b,
+);
+
+const defaultSizes = isMobile
+  ? '(min-width: 64rem) 20rem, (min-width: 40rem) 16rem, 60vw'
+  : '(min-width: 76rem) 72rem, calc(100vw - 2.5rem)';
+
+const themeClass = image.theme === 'dark' ? 'only-dark' : image.theme === 'light' ? 'only-light' : undefined;
+---
+
+<Picture
+  src={src}
+  alt={image.alt}
+  widths={usable}
+  sizes={sizes ?? defaultSizes}
+  formats={['avif', 'webp']}
+  fallbackFormat="png"
+  loading={loading}
+  decoding="async"
+  fetchpriority={fetchpriority}
+  class={cn('block h-auto w-full', themeClass, className)}
+  pictureAttributes={{ class: cn('contents', themeClass) }}
+/>

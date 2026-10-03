@@ -1,0 +1,47 @@
+---
+import TechIcon from './TechIcon.astro';
+import type { Availability } from '@/data/projects';
+import { cn } from '@/lib/cn';
+
+interface Props {
+  name: string;
+  status?: Availability;
+  class?: string;
+  /** Hide the brand mark. */
+  plain?: boolean;
+}
+
+const { name, status = 'implemented', class: className, plain = false } = Astro.props;
+const suffix = status === 'planned' ? 'Planned' : status === 'partial' ? 'Partial' : null;
+---
+
+<span
+  class={cn('chip', status === 'planned' && 'chip-planned', status === 'partial' && 'chip-partial', className)}
+  data-tech={name}
+>
+  {!plain && <TechIcon name={name} size={13} />}
+  <span>{name}</span>
+  {suffix && <span class="chip-suffix">{suffix}</span>}
+</span>
+
+<style>
+  .chip-planned {
+    border-style: dashed;
+    background: transparent;
+    color: var(--fg-subtle);
+  }
+
+  .chip-suffix {
+    margin-left: 0.125rem;
+    padding-left: 0.4rem;
+    border-left: 1px solid var(--border-strong);
+    color: var(--fg-subtle);
+    font-size: 0.625rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .chip-partial .chip-suffix {
+    color: var(--warn);
+  }
+</style>

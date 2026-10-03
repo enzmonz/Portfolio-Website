@@ -1,0 +1,63 @@
+---
+/**
+ * Button-styled link. When `href` is null (a placeholder value in the data
+ * files) it renders as a disabled control instead of a broken link.
+ */
+import Icon from './Icon.astro';
+import type { IconName } from './icons';
+import { cn } from '@/lib/cn';
+
+interface Props {
+  href: string | null;
+  label: string;
+  variant?: 'primary' | 'secondary' | 'ghost';
+  size?: 'md' | 'sm';
+  icon?: IconName;
+  trailing?: 'right' | 'up-right' | 'down' | 'none';
+  external?: boolean;
+  /** Shown as a tooltip / screen-reader hint when `href` is null. */
+  missing?: string;
+  class?: string;
+  [key: `data-${string}`]: unknown;
+}
+
+const {
+  href,
+  label,
+  variant = 'secondary',
+  size = 'md',
+  icon,
+  trailing = 'none',
+  external = false,
+  missing,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const classes = cn('btn', `btn-${variant}`, size === 'sm' && 'btn-sm', className);
+const trailingIcon: IconName | null =
+  trailing === 'right' ? 'arrow-right' : trailing === 'up-right' ? 'arrow-up-right' : trailing === 'down' ? 'arrow-down' : null;
+const arrowClass = cn('btn-arrow', trailing === 'down' && 'btn-arrow-down');
+---
+
+{
+  href ? (
+    <a
+      href={href}
+      class={classes}
+      {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+      {...rest}
+    >
+      {icon && <Icon name={icon} />}
+      <span>{label}</span>
+      {trailingIcon && <Icon name={trailingIcon} class={arrowClass} />}
+      {external && <span class="sr-only"> (opens in a new tab)</span>}
+    </a>
+  ) : (
+    <span class={classes} aria-disabled="true" title={missing ?? `${label} not available yet`} {...rest}>
+      {icon && <Icon name={icon} />}
+      <span>{label}</span>
+      <span class="sr-only"> — {missing ?? 'not available yet'}</span>
+    </span>
+  )
+}

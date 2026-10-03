@@ -1,0 +1,134 @@
+---
+/**
+ * Chapter opener: floating metadata (category, status, year), the title in
+ * pixel display type and the headline in Inter.
+ *
+ * The h3 comes first in the DOM, so heading navigation lands on it before
+ * the metadata, which is moved above it visually. The title link carries
+ * the `pt-{slug}` view-transition name that morphs into the case study h1.
+ */
+import StatusPill from '@/components/ui/StatusPill.astro';
+import type { Project } from '@/data/projects';
+import { cn } from '@/lib/cn';
+import { caseStudyHref } from './util';
+
+interface Props {
+  project: Project;
+  headingId: string;
+  /** 'xl' for short names; long names default to the smaller 'lg'. */
+  size?: 'xl' | 'lg';
+  class?: string;
+}
+
+const { project, headingId, size, class: className } = Astro.props;
+const resolved = size ?? (project.title.length > 30 ? 'lg' : 'xl');
+---
+
+<div class={cn('chh', className)} data-size={resolved}>
+  <h3 id={headingId} class="chh-title" data-reveal style="--d: 1">
+    <a
+      href={caseStudyHref(project)}
+      class="chh-link"
+      style={`view-transition-name: pt-${project.slug}`}
+      data-astro-prefetch
+    >
+      {project.title}
+    </a>
+  </h3>
+  <p class="chh-meta" data-reveal>
+    <span class="sr-only">Project {project.index}. </span>
+    <span class="chh-category">{project.category}</span>
+    <StatusPill status={project.status} />
+    <span class="chh-year"><span class="sr-only">Year </span>{project.year}</span>
+  </p>
+  <p class="chh-headline" data-reveal style="--d: 2">{project.headline}</p>
+</div>
+
+<style>
+  .chh {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .chh-meta {
+    order: -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.875rem;
+    margin-bottom: 1.125rem;
+  }
+
+  .chh-category,
+  .chh-year {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .chh-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    color: var(--fg-muted);
+  }
+
+  /* A single pixel as the category marker. */
+  .chh-category::before {
+    content: '';
+    width: 0.4375rem;
+    height: 0.4375rem;
+    background: var(--pixel);
+    box-shadow: 0 0 10px var(--accent-glow);
+    flex: none;
+  }
+
+  .chh-year {
+    color: var(--fg-subtle);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chh-title {
+    color: var(--fg);
+    font-family: var(--font-pixel);
+    font-size: clamp(2.375rem, 2.6vw + 1.5rem, 3.75rem);
+    font-weight: 600;
+    line-height: 0.98;
+    letter-spacing: 0;
+  }
+
+  .chh[data-size='lg'] .chh-title {
+    font-size: clamp(1.875rem, 1.4vw + 1.35rem, 2.75rem);
+    line-height: 1.04;
+  }
+
+  /* inline-block keeps the transitioned element a single box, even when the title wraps. */
+  .chh-link {
+    display: inline-block;
+    color: inherit;
+    text-decoration-line: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.14em;
+    transition: text-decoration-color 250ms var(--ease-out-quart);
+  }
+
+  .chh-link:hover {
+    text-decoration-color: var(--accent-line);
+  }
+
+  .chh-headline {
+    margin-top: 1rem;
+    max-width: 36ch;
+    color: var(--fg);
+    font-size: clamp(1.125rem, 0.35vw + 1.02rem, 1.3125rem);
+    line-height: 1.45;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+</style>

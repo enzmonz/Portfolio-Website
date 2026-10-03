@@ -1,0 +1,100 @@
+---
+/**
+ * Problem → solution as a definition list: mono labels in a hanging column,
+ * large body copy beside them. The open/filled markers read as "question"
+ * and "answer" without relying on colour.
+ */
+interface Props {
+  problem: string;
+  solution: string;
+}
+
+const { problem, solution } = Astro.props;
+---
+
+<dl class="ps">
+  <div class="ps-row" data-reveal>
+    <dt class="ps-label">
+      <span class="ps-mark" data-kind="problem" aria-hidden="true"></span>
+      Problem
+    </dt>
+    <dd class="ps-text">{problem}</dd>
+  </div>
+  <div class="ps-row" data-reveal style="--d: 1">
+    <dt class="ps-label">
+      <span class="ps-mark" data-kind="solution" aria-hidden="true"></span>
+      Solution
+    </dt>
+    <dd class="ps-text">{solution}</dd>
+  </div>
+</dl>
+
+<style>
+  .ps {
+    display: grid;
+  }
+
+  .ps-row {
+    display: grid;
+    gap: 0.875rem;
+    padding-block: 1.75rem;
+    border-top: 1px dashed var(--border);
+  }
+
+  .ps-row:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .ps-row:last-child {
+    padding-bottom: 0;
+  }
+
+  .ps-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    height: 1.75rem;
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .ps-mark {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 0.125rem;
+  }
+
+  .ps-mark[data-kind='problem'] {
+    border: 1px solid var(--fg-subtle);
+  }
+
+  .ps-mark[data-kind='solution'] {
+    background: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .ps-text {
+    max-width: 62ch;
+    color: var(--fg-muted);
+    font-size: clamp(1.0625rem, 0.35vw + 1rem, 1.1875rem);
+    line-height: 1.7;
+    letter-spacing: -0.011em;
+  }
+
+  @media (min-width: 48rem) {
+    .ps-row {
+      grid-template-columns: 8.5rem minmax(0, 1fr);
+      gap: 2rem;
+      padding-block: 2.25rem;
+    }
+
+    .ps-label {
+      /* Align with the first line of the text beside it. */
+      height: calc(1.1875rem * 1.7);
+    }
+  }
+</style>

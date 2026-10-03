@@ -1,0 +1,523 @@
+---
+/**
+ * Chapter 04, the e-commerce platform (presentation: 'storefront').
+ *
+ * lg+:  [ numeral · partial note ][ title, story, stack, actions ]
+ *       [ storefront composition, side windows bleeding outward ]
+ *       [ commerce flow ··································· ]
+ * Below lg: title → composition + flow → note → text.
+ *
+ * Hover over the composition or the flow (visual only, mouse): the screens
+ * shift by depth, a decorative cart badge bumps from 0 to 1, and the flow
+ * steps light up in order. The partial-payments note is always visible.
+ */
+import BrowserFrame from '@/components/ui/BrowserFrame.astro';
+import Icon from '@/components/ui/Icon.astro';
+import PhoneFrame from '@/components/ui/PhoneFrame.astro';
+import ProjectShot from '@/components/ui/ProjectShot.astro';
+import FlowRail from '@/components/visuals/FlowRail.astro';
+import type { Project, ProjectImage } from '@/data/projects';
+import { cn } from '@/lib/cn';
+import Chapter from './Chapter.astro';
+import ChapterHead from './ChapterHead.astro';
+import ProjectActions from './ProjectActions.astro';
+import ProjectStack from './ProjectStack.astro';
+import StageGrid from './StageGrid.astro';
+import { cardHeadingId, findImage, pickScreens } from './util';
+
+interface Props {
+  project: Project;
+  total: number;
+}
+
+const { project, total } = Astro.props;
+const headingId = cardHeadingId(project);
+
+/* The catalog and the admin dashboard as side screens: storefront and back
+   office. Fall back to whatever desktop shots exist. */
+const { hero, others, phone } = pickScreens(project);
+const preferred = ['sellbytes/catalog.png', 'sellbytes/admin-dashboard.png']
+  .map((src) => findImage(project, src))
+  .filter((image): image is ProjectImage => image !== undefined);
+const sides = (preferred.length === 2 ? preferred : others.slice(0, 2)).map((image, i) => ({
+  image,
+  side: i === 0 ? 'l' : 'r',
+}));
+const hasStage = hero.length > 0;
+const hasFlow = Boolean(project.flow && project.flow.length > 0);
+
+/* Partially built pieces, stated in words (from the stack notes). */
+const partials = project.stack
+  .filter((tech) => tech.status === 'partial' && tech.note)
+  .map((tech) => {
+    const note = (tech.note ?? '').replace(/;\s*/g, ' · ');
+    return { name: tech.name, note: note.charAt(0).toLowerCase() + note.slice(1) };
+  });
+
+const SIZES = {
+  hero: '(min-width: 76rem) 44rem, (min-width: 48rem) 60vw, 122vw',
+  side: '(min-width: 76rem) 34rem, (min-width: 48rem) 46vw, 1px',
+  phone: '(min-width: 76rem) 9rem, (min-width: 48rem) 13vw, 30vw',
+};
+---
+
+<Chapter project={project} total={total} numberSide="left" class="sb">
+  <div class="sb-grid">
+    <div class="sb-head">
+      <ChapterHead project={project} headingId={headingId} />
+    </div>
+
+    {
+      (hasStage || hasFlow) && (
+        <div class="sb-show" data-pj-pointer>
+          {hasStage && (
+            <figure class="sb-stage" data-reveal style="--d: 1">
+              <div class="sb-scene">
+                <StageGrid cell={32} />
+
+                {sides.map(({ image, side }) => (
+                  <div class={cn('sb-layer sb-side', `sb-side-${side}`)}>
+                    <BrowserFrame>
+                      <ProjectShot image={image} sizes={SIZES.side} />
+                    </BrowserFrame>
+                  </div>
+                ))}
+
+                <div class="sb-layer sb-hero">
+                  <BrowserFrame title={hero[0].caption}>
+                    {hero.map((image) => (
+                      <ProjectShot image={image} sizes={SIZES.hero} />
+                    ))}
+                  </BrowserFrame>
+                  <span class="sb-cart" aria-hidden="true">
+                    <Icon name="cart" size={14} />
+                    <span class="sb-cart-count">
+                      <span>0</span>
+                      <span>1</span>
+                    </span>
+                  </span>
+                </div>
+
+                {phone && (
+                  <div class="sb-layer sb-phone">
+                    <PhoneFrame>
+                      <ProjectShot image={phone} sizes={SIZES.phone} />
+                    </PhoneFrame>
+                  </div>
+                )}
+              </div>
+              <figcaption class="sb-caption">Screens from the running app · sample data</figcaption>
+            </figure>
+          )}
+
+          {hasFlow && project.flow && (
+            <div class="sb-flow" data-reveal style="--d: 2">
+              <p class="ch-label" aria-hidden="true">
+                Commerce flow
+              </p>
+              <div class="sb-rail">
+                <FlowRail steps={project.flow} label="Commerce flow" size="sm" />
+              </div>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    {
+      partials.length > 0 && (
+        <div class="sb-notes" data-reveal style="--d: 2">
+          {partials.map((item) => (
+            <p class="sb-note">
+              <span class="status" data-tone="warn">
+                Partial
+              </span>
+              <span class="sb-note-text">
+                <span class="sb-note-name">{item.name}:</span> {item.note}
+              </span>
+            </p>
+          ))}
+        </div>
+      )
+    }
+
+    <div class="sb-body">
+      <p class="ch-summary" data-reveal style="--d: 2">{project.summary}</p>
+      <div class="ch-foot sb-foot" data-reveal style="--d: 3">
+        <ProjectStack project={project} />
+        <ProjectActions project={project} />
+      </div>
+    </div>
+  </div>
+</Chapter>
+
+<style>
+  /* ---------------------------------------------------------------- */
+  /* Layout                                                            */
+  /* ---------------------------------------------------------------- */
+
+  .sb-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'head' 'show' 'notes' 'body';
+    row-gap: 2.5rem;
+  }
+
+  .sb-head {
+    grid-area: head;
+  }
+
+  .sb-show {
+    grid-area: show;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    min-width: 0;
+  }
+
+  .sb-notes {
+    grid-area: notes;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .sb-body {
+    grid-area: body;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    min-width: 0;
+  }
+
+  /* The numeral fills the empty top-left; the partial note sits under it. */
+  @media (min-width: 64rem) {
+    .sb-grid {
+      grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+      grid-template-areas:
+        '. head'
+        'notes body'
+        'show show';
+      column-gap: 4rem;
+      row-gap: 2rem;
+    }
+
+    .sb-head {
+      padding-top: 0.5rem;
+    }
+
+    .sb-notes {
+      align-self: start;
+      padding-top: 0.375rem;
+    }
+
+    .sb-show {
+      margin-top: 1.5rem;
+    }
+
+    .sb-foot {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 2rem;
+    }
+
+    .sb-foot > :global(:last-child) {
+      flex: none;
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Partial note                                                      */
+  /* ---------------------------------------------------------------- */
+
+  .sb-note {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding-left: 1rem;
+    border-left: 1px solid color-mix(in oklab, var(--warn) 45%, transparent);
+  }
+
+  .sb-note-text {
+    color: var(--fg-muted);
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  .sb-note-name {
+    color: var(--fg);
+    font-weight: 500;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Stage: storefront composition                                     */
+  /* ---------------------------------------------------------------- */
+
+  .sb-stage {
+    position: relative;
+    margin: 0;
+    container: sb-stage / inline-size;
+  }
+
+  .sb-scene {
+    position: relative;
+    isolation: isolate;
+    aspect-ratio: 1 / 0.92;
+  }
+
+  .sb-layer {
+    position: absolute;
+  }
+
+  /* Phones: the storefront (bleeding right) and the phone. */
+  .sb-side {
+    display: none;
+  }
+
+  .sb-hero {
+    z-index: 1;
+    top: 4cqw;
+    left: 4cqw;
+    width: 122cqw;
+  }
+
+  .sb-phone {
+    z-index: 3;
+    right: 5cqw;
+    bottom: 3cqw;
+    width: 30cqw;
+  }
+
+  :global(:root:not([data-theme='light'])) .sb-side {
+    filter: brightness(0.8);
+  }
+
+  /* The side windows run past the container toward the viewport edges. */
+  @media (min-width: 48rem) {
+    .sb-scene {
+      aspect-ratio: 16 / 7.4;
+    }
+
+    .sb-side {
+      display: block;
+      z-index: 0;
+      width: 46cqw;
+    }
+
+    .sb-side-l {
+      top: 6cqw;
+      left: -9cqw;
+    }
+
+    .sb-side-r {
+      top: 11cqw;
+      right: -9cqw;
+    }
+
+    .sb-hero {
+      top: 1cqw;
+      left: 20cqw;
+      width: 60cqw;
+    }
+
+    .sb-phone {
+      right: auto;
+      left: 73cqw;
+      bottom: 0;
+      width: 12.5cqw;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .sb-scene {
+      aspect-ratio: 16 / 7;
+    }
+  }
+
+  /* Parallax by depth (--px / --py: -1…1, set by Projects.astro's script). */
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .sb-layer {
+      translate: calc(var(--px, 0) * var(--z, 0) * 1px) calc(var(--py, 0) * var(--z, 0) * 0.6px);
+      transition: translate 900ms var(--ease-out-expo);
+    }
+
+    .sb-show[data-pointer] .sb-layer {
+      transition-duration: 340ms;
+    }
+
+    .sb-side-l {
+      --z: -14;
+    }
+
+    .sb-side-r {
+      --z: -10;
+    }
+
+    .sb-hero {
+      --z: 8;
+    }
+
+    .sb-phone {
+      --z: 22;
+    }
+  }
+
+  /* Entrance: the whole storefront settles in from slightly larger. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) .sb-stage[data-reveal] {
+      transform: scale(1.035);
+      transition-duration: 1200ms;
+    }
+
+    :global(html.js) .sb-stage[data-reveal]:global(.is-visible) {
+      transform: none;
+    }
+  }
+
+  .sb-caption {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.02em;
+  }
+
+  .sb-caption::before {
+    content: '';
+    width: 0.4375rem;
+    height: 0.4375rem;
+    border: 1px solid var(--accent-line);
+    background: var(--accent-soft);
+    rotate: 45deg;
+    flex: none;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Cart badge (decorative)                                           */
+  /* ---------------------------------------------------------------- */
+
+  .sb-cart {
+    display: none;
+  }
+
+  @media (min-width: 48rem) {
+    .sb-cart {
+      position: absolute;
+      top: -0.875rem;
+      right: -0.875rem;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      height: 1.875rem;
+      padding-inline: 0.625rem 0.75rem;
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--fg-muted);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      box-shadow: var(--shadow-float);
+      transition:
+        border-color 300ms var(--ease-out-quart) 260ms,
+        color 300ms var(--ease-out-quart) 260ms;
+    }
+  }
+
+  .sb-cart-count {
+    display: inline-flex;
+    flex-direction: column;
+    height: 1rem;
+    overflow: hidden;
+    line-height: 1rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sb-cart-count > span {
+    transition: translate 500ms var(--ease-out-expo);
+  }
+
+  @keyframes sb-bump {
+    0%,
+    100% {
+      scale: 1;
+    }
+    35% {
+      scale: 1.16;
+    }
+  }
+
+  @media (hover: hover) {
+    .sb-show:hover .sb-cart {
+      border-color: var(--accent-line);
+      color: var(--accent-text);
+      animation: sb-bump 520ms var(--ease-out-quart) 260ms;
+    }
+
+    .sb-show:hover .sb-cart-count > span {
+      translate: 0 -100%;
+      transition-delay: 260ms;
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Commerce flow: steps light up in order on hover                   */
+  /* ---------------------------------------------------------------- */
+
+  .sb-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .sb-rail :global(.step-dot) {
+    position: relative;
+  }
+
+  .sb-rail :global(.step-dot)::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border: 1px solid var(--accent-line);
+    border-radius: 999px;
+    box-shadow: 0 0 16px var(--accent-glow);
+    opacity: 0;
+    scale: 0.5;
+    transition:
+      opacity 400ms var(--ease-out-quart),
+      scale 600ms var(--ease-out-expo);
+    transition-delay: calc(var(--i, 0) * 150ms);
+  }
+
+  .sb-rail :global(.step[data-status='partial'] .step-dot)::after {
+    border-color: color-mix(in oklab, var(--warn) 55%, transparent);
+    box-shadow: 0 0 16px color-mix(in oklab, var(--warn) 40%, transparent);
+  }
+
+  .sb-rail :global(.step-index) {
+    transition: color 300ms var(--ease-out-quart);
+    transition-delay: calc(var(--i, 0) * 150ms);
+  }
+
+  @media (hover: hover) {
+    .sb-show:hover .sb-rail :global(.step-dot)::after {
+      opacity: 1;
+      scale: 1;
+    }
+
+    .sb-show:hover .sb-rail :global(.step:not([data-status='partial']) .step-index) {
+      color: var(--accent-text);
+    }
+
+    .sb-show:hover .sb-rail :global(.step[data-status='partial'] .step-index) {
+      color: var(--warn);
+    }
+  }
+</style>

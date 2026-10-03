@@ -1,0 +1,661 @@
+---
+/**
+ * One screen of the Mobile Booking app, recreated from its React Native source
+ * (tokens, spacing, copy and component structure). Rendered inside
+ * BookingPhone's screen, which defines `--u`: one app point, scaled so a
+ * 340pt-wide layout fills the phone at any size.
+ *
+ * Colors are the app's own identity, not site tokens: this depicts that app.
+ * The sample booking follows the app's own rules: its deterministic
+ * availability for 2026-10-06 marks 11:00 AM and 4:00 PM unavailable, dates use
+ * its long ("October 6, 2026") and short ("Oct 6") formats, and the Upcoming
+ * tab only ever lists confirmed bookings.
+ */
+import { appIcons, type AppIcon } from './icons';
+
+interface Props {
+  screen: 'availability' | 'review' | 'confirmed' | 'history';
+}
+
+const { screen } = Astro.props;
+
+const booking = {
+  service: 'Professional Haircut',
+  provider: 'Sample Salon',
+  date: 'October 6, 2026',
+  time: '2:00 PM',
+  duration: '1 hour',
+  price: '₱500',
+};
+
+type SlotState = 'open' | 'selected' | 'unavailable';
+const slots: [string, SlotState][] = [
+  ['9:00 AM', 'open'],
+  ['10:00 AM', 'open'],
+  ['11:00 AM', 'unavailable'],
+  ['1:00 PM', 'open'],
+  ['2:00 PM', 'selected'],
+  ['3:00 PM', 'open'],
+  ['4:00 PM', 'unavailable'],
+  ['5:00 PM', 'open'],
+];
+
+const reviewFields: [string, string][] = [
+  ['Service', booking.service],
+  ['Provider', booking.provider],
+  ['Date', booking.date],
+  ['Time', booking.time],
+  ['Duration', booking.duration],
+];
+
+const upcoming = [
+  { service: booking.service, provider: booking.provider, day: 'Oct 6', time: booking.time, price: booking.price },
+  { service: 'Relaxation Massage', provider: 'Serenity Spa', day: 'Oct 9', time: '11:00 AM', price: '₱900' },
+];
+
+const tabBar: { label: string; icon: AppIcon; active?: boolean }[] = [
+  { label: 'Home', icon: 'home' },
+  { label: 'Explore', icon: 'compass' },
+  { label: 'Bookings', icon: 'calendar', active: true },
+  { label: 'Profile', icon: 'person' },
+];
+
+const progress = ['Date', 'Time', 'Confirm'];
+const currentStep = screen === 'availability' ? 2 : 3;
+const on = (flag: boolean) => (flag ? '' : undefined);
+---
+
+<div class="a" data-screen={screen}>
+  {
+    (screen === 'availability' || screen === 'review') && (
+      <>
+        <div class="a-hdr">
+          <span class="a-hdr-side">
+            <svg class="a-back" viewBox="0 0 512 512" aria-hidden="true" focusable="false" set:html={appIcons.arrowBack} />
+          </span>
+          <p class="a-hdr-title">{screen === 'availability' ? 'Choose a time' : 'Confirm'}</p>
+          <span class="a-hdr-side" />
+        </div>
+
+        <div class="a-steps">
+          {progress.map((label, i) => {
+            const step = i + 1;
+            return (
+              <>
+                <span class="a-step" data-on={on(step <= currentStep)}>
+                  <span class="a-step-n">{String(step).padStart(2, '0')}</span>
+                  <span class="a-step-l">{label}</span>
+                </span>
+                {i < progress.length - 1 && <span class="a-step-line" data-on={on(step < currentStep)} aria-hidden="true" />}
+              </>
+            );
+          })}
+        </div>
+      </>
+    )
+  }
+
+  {
+    screen === 'availability' && (
+      <>
+        <div class="a-body">
+          <p class="a-title">Available times</p>
+          <p class="a-sub">{booking.date}</p>
+          <ul class="a-slots">
+            {slots.map(([time, state]) => (
+              <li class="a-slot" data-state={state}>
+                {time}
+                {state !== 'open' && <span class="sr-only">{state === 'selected' ? ' (selected)' : ' (unavailable)'}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div class="a-foot">
+          <span class="a-btn">Continue</span>
+        </div>
+      </>
+    )
+  }
+
+  {
+    screen === 'review' && (
+      <>
+        <div class="a-body">
+          <p class="a-title a-title--gap">Review booking</p>
+          <dl class="a-fields">
+            {reviewFields.map(([label, value]) => (
+              <div class="a-field">
+                <dt class="a-label">{label}</dt>
+                <dd class="a-value">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <div class="a-divider" aria-hidden="true" />
+          <dl>
+            <dt class="a-label">Total</dt>
+            <dd class="a-total">{booking.price}</dd>
+          </dl>
+        </div>
+        <div class="a-foot">
+          <span class="a-btn">Confirm booking</span>
+        </div>
+      </>
+    )
+  }
+
+  {
+    screen === 'confirmed' && (
+      <>
+        <div class="a-success">
+          <span class="a-check" aria-hidden="true">
+            <svg viewBox="0 0 512 512" focusable="false" set:html={appIcons.checkmark} />
+          </span>
+          <p class="a-title">Booking confirmed</p>
+          <p class="a-sub a-sub--tight">Your appointment is scheduled.</p>
+          <div class="a-summary">
+            <p class="a-sum-name">{booking.service}</p>
+            <p class="a-sum-detail">{booking.date}</p>
+            <p class="a-sum-detail">{booking.time}</p>
+            <p class="a-sum-price">{booking.price}</p>
+          </div>
+        </div>
+        <div class="a-foot a-foot--plain">
+          <span class="a-btn">View booking</span>
+          <span class="a-btn a-btn--outline">Back to home</span>
+        </div>
+      </>
+    )
+  }
+
+  {
+    screen === 'history' && (
+      <>
+        <p class="a-big">My bookings</p>
+        <div class="a-tabs">
+          <span class="a-tab" data-on>
+            Upcoming<span class="sr-only"> (selected)</span>
+            <span class="a-tab-ind" aria-hidden="true" />
+          </span>
+          <span class="a-tab">
+            Past
+            <span class="a-tab-ind" aria-hidden="true" />
+          </span>
+        </div>
+        <ul class="a-cards">
+          {upcoming.map((item) => (
+            <li class="a-card">
+              <span class="a-badge">
+                <span class="a-badge-dot" aria-hidden="true" />
+                Confirmed
+              </span>
+              <p class="a-card-name">{item.service}</p>
+              <p class="a-card-provider">{item.provider}</p>
+              <p class="a-card-when">
+                {item.day} · {item.time}
+              </p>
+              <p class="a-card-price">{item.price}</p>
+              <p class="a-card-link">
+                View details
+                <svg viewBox="0 0 512 512" aria-hidden="true" focusable="false" set:html={appIcons.arrowForward} />
+              </p>
+            </li>
+          ))}
+        </ul>
+        <div class="a-tabbar" aria-hidden="true">
+          {tabBar.map((item) => (
+            <span class="a-tabbar-item" data-on={on(Boolean(item.active))}>
+              <svg class="a-tabbar-icon" viewBox="0 0 512 512" focusable="false" set:html={appIcons[item.icon]} />
+              <span class="a-tabbar-dot" />
+              <span class="a-tabbar-label">{item.label}</span>
+            </span>
+          ))}
+        </div>
+      </>
+    )
+  }
+</div>
+
+<style>
+  /* All lengths are app points: calc(var(--u) * N). Hairlines stay 1px. */
+  .a {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    color: #151515;
+    font-family: var(--font-sans);
+    font-feature-settings: normal;
+    line-height: 1.25;
+    letter-spacing: 0;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  .a svg {
+    flex: none;
+  }
+
+  /* ---------------- Header + progress steps ---------------- */
+
+  .a-hdr {
+    display: flex;
+    flex: none;
+    align-items: center;
+    height: calc(var(--u) * 52);
+    padding-inline: calc(var(--u) * 20);
+  }
+
+  .a-hdr-side {
+    display: flex;
+    width: calc(var(--u) * 40);
+  }
+
+  .a-back {
+    width: calc(var(--u) * 20);
+    height: calc(var(--u) * 20);
+    margin-left: calc(var(--u) * 2);
+  }
+
+  .a-hdr-title {
+    flex: 1;
+    font-size: calc(var(--u) * 16);
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .a-steps {
+    display: flex;
+    flex: none;
+    align-items: center;
+    padding: 0 calc(var(--u) * 20) calc(var(--u) * 16);
+  }
+
+  .a-step {
+    display: flex;
+    align-items: baseline;
+    gap: calc(var(--u) * 6);
+    color: #92928b;
+    white-space: nowrap;
+  }
+
+  .a-step-n {
+    font-size: calc(var(--u) * 12);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .a-step-l {
+    font-size: calc(var(--u) * 13);
+    font-weight: 500;
+  }
+
+  .a-step[data-on] .a-step-n {
+    color: #718a42;
+  }
+
+  .a-step[data-on] .a-step-l {
+    color: #151515;
+  }
+
+  .a-step-line {
+    flex: 1;
+    height: 1px;
+    margin-inline: calc(var(--u) * 8);
+    background: #dcdcd5;
+  }
+
+  .a-step-line[data-on] {
+    background: #718a42;
+  }
+
+  /* ---------------- Shared content ---------------- */
+
+  .a-body {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0 calc(var(--u) * 20) calc(var(--u) * 20);
+  }
+
+  .a-title {
+    font-size: calc(var(--u) * 24);
+    line-height: calc(var(--u) * 30);
+    font-weight: 600;
+    letter-spacing: calc(var(--u) * -0.2);
+  }
+
+  .a-title--gap {
+    margin-bottom: calc(var(--u) * 24);
+  }
+
+  .a-sub {
+    margin-top: calc(var(--u) * 4);
+    color: #6b6b65;
+    font-size: calc(var(--u) * 14);
+    line-height: calc(var(--u) * 22);
+  }
+
+  .a-foot {
+    flex: none;
+    margin-bottom: calc(var(--u) * 26);
+    padding: calc(var(--u) * 20);
+    border-top: 1px solid #dcdcd5;
+  }
+
+  .a-foot--plain {
+    border-top: 0;
+  }
+
+  .a-btn {
+    display: grid;
+    place-items: center;
+    height: calc(var(--u) * 52);
+    border-radius: calc(var(--u) * 12);
+    background: #a8c76a;
+    color: #151515;
+    font-size: calc(var(--u) * 15);
+    font-weight: 600;
+  }
+
+  .a-btn--outline {
+    border: 1px solid #dcdcd5;
+    background: transparent;
+  }
+
+  .a-btn + .a-btn {
+    margin-top: calc(var(--u) * 12);
+  }
+
+  /* ---------------- 01 · Time slots ---------------- */
+
+  .a-slots {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: calc(var(--u) * 12);
+    margin-top: calc(var(--u) * 24);
+  }
+
+  .a-slot {
+    display: grid;
+    place-items: center;
+    height: calc(var(--u) * 50);
+    border: 1px solid #dcdcd5;
+    border-radius: calc(var(--u) * 12);
+    background: #fff;
+    font-size: calc(var(--u) * 14.5);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .a-slot[data-state='selected'] {
+    border-color: #a8c76a;
+    background: #a8c76a;
+    font-weight: 600;
+  }
+
+  .a-slot[data-state='unavailable'] {
+    background: #f5f4ef;
+    color: #92928b;
+    text-decoration: line-through;
+  }
+
+  /* ---------------- 02 · Review ---------------- */
+
+  .a-field {
+    margin-bottom: calc(var(--u) * 20);
+  }
+
+  .a-label {
+    color: #92928b;
+    font-size: calc(var(--u) * 12);
+    line-height: calc(var(--u) * 16);
+    font-weight: 600;
+    letter-spacing: calc(var(--u) * 1);
+  }
+
+  .a-value {
+    margin-top: calc(var(--u) * 4);
+    font-size: calc(var(--u) * 17);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .a-divider {
+    height: 1px;
+    margin-block: calc(var(--u) * 12);
+    background: #dcdcd5;
+  }
+
+  .a-total {
+    margin-top: calc(var(--u) * 4);
+    font-size: calc(var(--u) * 28);
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  /* ---------------- 03 · Confirmation ---------------- */
+
+  .a-success {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding-inline: calc(var(--u) * 32);
+    text-align: center;
+  }
+
+  .a-check {
+    display: grid;
+    place-items: center;
+    width: calc(var(--u) * 72);
+    height: calc(var(--u) * 72);
+    margin-bottom: calc(var(--u) * 24);
+    border: max(1px, calc(var(--u) * 1.5)) solid #a8c76a;
+    border-radius: 50%;
+    background: #efeee7;
+    color: #718a42;
+  }
+
+  .a-check svg {
+    width: calc(var(--u) * 30);
+    height: calc(var(--u) * 30);
+  }
+
+  .a-sub--tight {
+    line-height: 1.4;
+  }
+
+  .a-summary {
+    width: 100%;
+    margin-top: calc(var(--u) * 32);
+    padding-top: calc(var(--u) * 24);
+    border-top: 1px solid #dcdcd5;
+  }
+
+  .a-sum-name {
+    font-size: calc(var(--u) * 18);
+    font-weight: 600;
+  }
+
+  .a-sum-detail {
+    margin-top: calc(var(--u) * 4);
+    color: #6b6b65;
+    font-size: calc(var(--u) * 14);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .a-sum-price {
+    margin-top: calc(var(--u) * 12);
+    font-size: calc(var(--u) * 16);
+    font-weight: 600;
+  }
+
+  /* ---------------- 04 · My bookings ---------------- */
+
+  .a-big {
+    flex: none;
+    padding: calc(var(--u) * 8) calc(var(--u) * 20) calc(var(--u) * 4);
+    font-size: calc(var(--u) * 30);
+    line-height: calc(var(--u) * 40);
+    font-weight: 700;
+    letter-spacing: calc(var(--u) * -0.4);
+  }
+
+  .a-tabs {
+    display: flex;
+    flex: none;
+    gap: calc(var(--u) * 24);
+    margin-block: calc(var(--u) * 16);
+    padding-inline: calc(var(--u) * 20);
+    border-bottom: 1px solid #dcdcd5;
+  }
+
+  .a-tab {
+    padding-bottom: calc(var(--u) * 12);
+    color: #92928b;
+    font-size: calc(var(--u) * 15);
+    line-height: calc(var(--u) * 20);
+    font-weight: 500;
+  }
+
+  .a-tab[data-on] {
+    color: #151515;
+    font-weight: 600;
+  }
+
+  .a-tab-ind {
+    display: block;
+    height: max(1.5px, calc(var(--u) * 2));
+    margin-top: calc(var(--u) * 12);
+  }
+
+  .a-tab[data-on] .a-tab-ind {
+    background: #718a42;
+  }
+
+  .a-cards {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: calc(var(--u) * 16);
+    min-height: 0;
+    overflow: hidden;
+    padding-inline: calc(var(--u) * 20);
+  }
+
+  .a-card {
+    flex: none;
+    padding: calc(var(--u) * 16);
+    border: 1px solid #dcdcd5;
+    border-radius: calc(var(--u) * 16);
+    background: #fff;
+  }
+
+  .a-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--u) * 6);
+    padding: calc(var(--u) * 5) calc(var(--u) * 10);
+    border-radius: 999px;
+    background: #efeee7;
+    color: #718a42;
+    font-size: calc(var(--u) * 11);
+    line-height: calc(var(--u) * 16);
+    font-weight: 500;
+    letter-spacing: calc(var(--u) * 0.4);
+    text-transform: uppercase;
+  }
+
+  .a-badge-dot {
+    width: calc(var(--u) * 5);
+    height: calc(var(--u) * 5);
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .a-card-name {
+    margin-top: calc(var(--u) * 12);
+    font-size: calc(var(--u) * 17);
+    font-weight: 600;
+  }
+
+  .a-card-provider {
+    margin-top: calc(var(--u) * 2);
+    color: #6b6b65;
+    font-size: calc(var(--u) * 13);
+  }
+
+  .a-card-when {
+    margin-top: calc(var(--u) * 12);
+    font-size: calc(var(--u) * 13);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .a-card-price {
+    margin-top: calc(var(--u) * 4);
+    font-size: calc(var(--u) * 15);
+    font-weight: 600;
+  }
+
+  .a-card-link {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--u) * 5);
+    margin-top: calc(var(--u) * 12);
+    padding-top: calc(var(--u) * 12);
+    border-top: 1px solid #dcdcd5;
+    color: #718a42;
+    font-size: calc(var(--u) * 13);
+    font-weight: 600;
+  }
+
+  .a-card-link svg {
+    width: calc(var(--u) * 14);
+    height: calc(var(--u) * 14);
+  }
+
+  .a-tabbar {
+    display: grid;
+    flex: none;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: calc(var(--u) * 8) 0 calc(var(--u) * 28);
+    border-top: 1px solid #dcdcd5;
+    background: #fff;
+  }
+
+  .a-tabbar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: calc(var(--u) * 2);
+    color: #92928b;
+  }
+
+  .a-tabbar-item[data-on] {
+    color: #151515;
+  }
+
+  .a-tabbar-icon {
+    width: calc(var(--u) * 22);
+    height: calc(var(--u) * 22);
+  }
+
+  .a-tabbar-dot {
+    width: calc(var(--u) * 3);
+    height: calc(var(--u) * 3);
+    margin-top: calc(var(--u) * 5);
+    border-radius: 50%;
+  }
+
+  .a-tabbar-item[data-on] .a-tabbar-dot {
+    background: #718a42;
+  }
+
+  .a-tabbar-label {
+    margin-top: calc(var(--u) * 2);
+    font-size: calc(var(--u) * 11);
+    font-weight: 500;
+  }
+</style>

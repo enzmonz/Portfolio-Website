@@ -1,0 +1,122 @@
+---
+import { Font } from 'astro:assets';
+import '@/styles/global.css';
+import NavigationCore from '@/components/NavigationCore/NavigationCore.astro';
+import Ambient from '@/components/Ambient.astro';
+import Footer from '@/components/Footer.astro';
+import { site } from '@/data/site';
+import { socials } from '@/data/socials';
+import { isPlaceholder } from '@/lib/links';
+
+interface Props {
+  /** Page title. Defaults to the site title. */
+  title?: string;
+  description?: string;
+  /** Absolute or root-relative path to a 1200×630 image. */
+  image?: string;
+  type?: 'website' | 'article';
+  noindex?: boolean;
+  /** 'home' enables in-page section links in the nav. */
+  page?: 'home' | 'project' | 'game' | 'other';
+}
+
+const {
+  title = site.seo.title,
+  description = site.seo.description,
+  image = site.seo.ogImage,
+  type = 'website',
+  noindex = false,
+  page = 'other',
+} = Astro.props;
+
+const siteUrl = Astro.site ?? new URL(Astro.url.origin);
+// Pages build to `name.html` files but are served without the extension; match the sitemap.
+const cleanPath = Astro.url.pathname.replace(/(index)?\.html$/, '').replace(/(.)\/$/, '$1') || '/';
+const canonical = new URL(cleanPath, siteUrl).href;
+const imageUrl = new URL(image, siteUrl).href;
+
+const sameAs = [socials.github, socials.linkedin].filter((v) => !isPlaceholder(v));
+const personLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.name,
+  jobTitle: site.title,
+  url: siteUrl.href,
+  alumniOf: { '@type': 'CollegeOrUniversity', name: site.school.name },
+  knowsAbout: ['Full-stack development', 'Software engineering', 'Database systems', 'System design'],
+  ...(sameAs.length ? { sameAs } : {}),
+};
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      // Apply the saved theme before first paint to avoid a flash. Dark is the default.
+      (function () {
+        var d = document.documentElement;
+        d.classList.add('js');
+        try {
+          var t = localStorage.getItem('theme');
+          if (t === 'light' || t === 'dark') d.dataset.theme = t;
+        } catch (e) {}
+      })();
+    </script>
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="author" content={site.name} />
+    <meta name="theme-color" content="#09090b" />
+    <meta name="color-scheme" content="dark light" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${site.name} — ${site.title}`} />
+    <meta property="og:locale" content={site.seo.locale} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+
+    <Font cssVariable="--font-inter" preload />
+    <Font cssVariable="--font-jetbrains" />
+    <Font cssVariable="--font-pixelify" preload />
+
+    <script type="application/ld+json" set:html={JSON.stringify(personLd)} />
+    <slot name="head" />
+  </head>
+  <body class="relative min-h-dvh bg-bg text-fg antialiased">
+    <a
+      href="#main"
+      class="sr-only-focusable fixed top-3 left-3 z-[100] rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-contrast"
+      >Skip to content</a
+    >
+    <div class="grain" aria-hidden="true"></div>
+    <Ambient />
+    <NavigationCore page={page} />
+    <main id="main" tabindex="-1" class="relative outline-none">
+      <slot />
+    </main>
+    <Footer />
+    <div class="cursor" aria-hidden="true" data-cursor-layer><span class="cursor-ring"></span><span class="cursor-dot"></span></div>
+    <script>
+      import '@/scripts/site';
+    </script>
+  </body>
+</html>

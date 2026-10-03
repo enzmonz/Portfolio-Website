@@ -1,0 +1,728 @@
+---
+/**
+ * The navigation core: a glowing "system node" that replaces a classic navbar.
+ *
+ * - Closed: only the core is visible (top-centre). After scrolling it becomes a
+ *   compact floating control that also shows the current section.
+ * - Open: a modal <dialog> (focus trap + Esc for free). The menu emerges from the core:
+ *   a fan of destinations on desktop, a stacked list on phones, plus social links
+ *   and the theme switch.
+ * Behaviour lives in src/scripts/site.ts (initNavCore).
+ */
+import Icon from '@/components/ui/Icon.astro';
+import LogoMark from '@/components/ui/LogoMark.astro';
+import { navItems, navHref } from '@/data/navigation';
+import { site } from '@/data/site';
+import { socialLink } from '@/lib/links';
+
+interface Props {
+  page?: 'home' | 'project' | 'game' | 'other';
+}
+
+const { page = 'other' } = Astro.props;
+const onHome = page === 'home';
+const linkedin = socialLink('linkedin');
+const email = socialLink('email');
+const github = socialLink('github');
+
+const pageLabel = page === 'project' ? 'Case study' : page === 'game' ? 'Mini Game' : page === 'home' ? 'Home' : 'Menu';
+const currentId = page === 'game' ? 'mini-game' : null;
+const particles = Array.from({ length: 8 }, (_, i) => i);
+---
+
+<!-- Corner controls: brand (left) and theme switch (right). They scroll away with the page. -->
+<div class="corner-bar container-page pointer-events-none absolute inset-x-0 top-0 z-40 flex items-center justify-between pt-5 sm:pt-6">
+  <a
+    href={onHome ? '#home' : '/'}
+    class="brand pointer-events-auto flex items-center gap-2.5 rounded-lg"
+    aria-label={`${site.name} — home`}
+    data-magnetic
+  >
+    <LogoMark size={30} />
+    <span class="font-pixel text-[1.0625rem] leading-none tracking-[0.02em] text-fg uppercase max-sm:hidden">{site.name}</span>
+  </a>
+  <button type="button" class="theme-btn pointer-events-auto" data-theme-toggle aria-label="Switch to light theme" data-magnetic>
+    <Icon name="sun" size={17} class="theme-icon-sun" />
+    <Icon name="moon" size={17} class="theme-icon-moon" />
+  </button>
+</div>
+
+<!-- The core -->
+<div class="core-dock" data-core-dock data-page={page}>
+  <button
+    type="button"
+    class="core"
+    aria-haspopup="dialog"
+    aria-controls="nav-core-menu"
+    aria-expanded="false"
+    data-core-open
+    data-magnetic
+  >
+    <span class="core-orb" aria-hidden="true">
+      <span class="core-halo"></span>
+      <svg class="core-ring" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="29" pathLength="100"></circle>
+      </svg>
+      <span class="core-glass"></span>
+      <span class="core-dot"></span>
+      {particles.map((i) => <span class="core-px" style={`--i:${i}`} />)}
+    </span>
+    <span class="core-label" aria-hidden="true">
+      <span class="core-label-idle">Menu</span>
+      <span class="core-label-current" data-core-current>{pageLabel}</span>
+    </span>
+    <span class="sr-only">Open navigation</span>
+  </button>
+</div>
+
+<dialog id="nav-core-menu" class="hub" aria-label="Site navigation" data-core-menu>
+  <div class="hub-scrim" data-core-scrim></div>
+
+  <button type="button" class="core core-close" data-core-close aria-label="Close navigation">
+    <span class="core-orb" aria-hidden="true">
+      <span class="core-halo"></span>
+      <svg class="core-ring" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="29" pathLength="100"></circle>
+      </svg>
+      <span class="core-glass"></span>
+      <Icon name="x" size={18} class="core-x" />
+    </span>
+  </button>
+
+  <nav class="hub-nav" aria-label="Primary">
+    <svg class="hub-lines" aria-hidden="true" data-hub-lines></svg>
+    <ol class="hub-items" style={`--count:${navItems.length}`}>
+      {
+        navItems.map((item, i) => (
+          <li class="hub-item" style={`--i:${i}`}>
+            <a
+              href={navHref(item, onHome)}
+              class="hub-link"
+              data-hub-link
+              data-nav-link={item.id}
+              aria-current={currentId === item.id ? 'page' : undefined}
+            >
+              <span class="hub-index">{String(i).padStart(2, '0')}</span>
+              <span class="hub-label">{item.label}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+
+    <div class="hub-meta">
+      <ul class="hub-socials" aria-label="Elsewhere">
+        <li>
+          {
+            linkedin.href ? (
+              <a href={linkedin.href} class="hub-chip" target="_blank" rel="noopener noreferrer">
+                <Icon name="linkedin-brand" size={14} />
+                LinkedIn<span class="sr-only"> (opens in a new tab)</span>
+              </a>
+            ) : (
+              <span class="hub-chip is-missing" title={linkedin.missing}>
+                <Icon name="linkedin-brand" size={14} />
+                LinkedIn
+              </span>
+            )
+          }
+        </li>
+        <li>
+          {
+            email.href ? (
+              <a href={email.href} class="hub-chip">
+                <Icon name="mail" size={14} />
+                Email
+              </a>
+            ) : (
+              <span class="hub-chip is-missing" title={email.missing}>
+                <Icon name="mail" size={14} />
+                Email
+              </span>
+            )
+          }
+        </li>
+        <li>
+          {
+            github.href ? (
+              <a href={github.href} class="hub-chip" target="_blank" rel="noopener noreferrer">
+                <Icon name="github" size={14} />
+                GitHub<span class="sr-only"> (opens in a new tab)</span>
+              </a>
+            ) : (
+              <span class="hub-chip is-missing" title={github.missing}>
+                <Icon name="github" size={14} />
+                GitHub<span class="sr-only"> — {github.missing}</span>
+              </span>
+            )
+          }
+        </li>
+        <li>
+          <button type="button" class="hub-chip" data-theme-toggle aria-label="Switch to light theme">
+            <Icon name="sun" size={14} class="theme-icon-sun" />
+            <Icon name="moon" size={14} class="theme-icon-moon" />
+            Theme
+          </button>
+        </li>
+      </ul>
+      <p class="hub-hint" aria-hidden="true"><kbd>Esc</kbd> to close</p>
+    </div>
+  </nav>
+</dialog>
+
+<style>
+  @layer components {
+    /* ------------------------------------------------------------ */
+    /* Corner controls                                               */
+    /* ------------------------------------------------------------ */
+    .theme-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      background: color-mix(in oklab, var(--surface) 70%, transparent);
+      color: var(--fg-muted);
+      backdrop-filter: blur(8px);
+      transition:
+        color 200ms,
+        border-color 200ms,
+        background-color 200ms;
+    }
+
+    .theme-btn:hover {
+      color: var(--fg);
+      border-color: var(--border-hover);
+    }
+
+    :global([data-theme='dark'] .theme-icon-moon),
+    :global([data-theme='light'] .theme-icon-sun) {
+      display: none;
+    }
+
+    /* ------------------------------------------------------------ */
+    /* Dock + core                                                   */
+    /* ------------------------------------------------------------ */
+    .core-dock {
+      position: fixed;
+      top: 0.875rem;
+      left: 50%;
+      z-index: 55;
+      translate: -50% 0;
+      pointer-events: none;
+    }
+
+    @media (width >= 40rem) {
+      .core-dock {
+        top: 1.125rem;
+      }
+    }
+
+    .core {
+      --size: 3.25rem;
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      border-radius: 999px;
+      color: var(--fg);
+      transition: gap 500ms var(--ease-out-expo);
+    }
+
+    .core-orb {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: var(--size);
+      height: var(--size);
+      border-radius: 999px;
+      transition:
+        width 500ms var(--ease-out-expo),
+        height 500ms var(--ease-out-expo),
+        scale 400ms var(--ease-out-expo);
+    }
+
+    .core-halo {
+      position: absolute;
+      inset: -45%;
+      border-radius: inherit;
+      background: radial-gradient(closest-side, var(--accent-glow), transparent 72%);
+      opacity: 0.55;
+      animation: core-breathe 4.5s var(--ease-in-out-quart) infinite;
+      transition: opacity 400ms;
+      pointer-events: none;
+    }
+
+    .core-glass {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid color-mix(in oklab, var(--accent) 45%, var(--border-strong));
+      background:
+        radial-gradient(circle at 35% 30%, color-mix(in oklab, var(--accent) 22%, transparent), transparent 60%),
+        color-mix(in oklab, var(--surface) 70%, transparent);
+      backdrop-filter: blur(10px) saturate(1.3);
+      -webkit-backdrop-filter: blur(10px) saturate(1.3);
+      box-shadow:
+        0 0 0 4px color-mix(in oklab, var(--accent) 7%, transparent),
+        0 8px 28px -8px var(--accent-glow),
+        inset 0 1px 0 rgb(255 255 255 / 0.12);
+    }
+
+    .core-ring {
+      position: absolute;
+      inset: -7px;
+      width: calc(100% + 14px);
+      height: calc(100% + 14px);
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 1.2;
+      stroke-dasharray: 2 6;
+      opacity: 0.55;
+      animation: core-spin 18s linear infinite;
+      transition: opacity 300ms;
+    }
+
+    .core-dot {
+      position: relative;
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 3px; /* a pixel, softened */
+      background: var(--accent);
+      box-shadow:
+        0 0 12px 2px var(--accent-glow),
+        0 0 2px var(--accent);
+      transition:
+        scale 400ms var(--ease-out-expo),
+        border-radius 400ms;
+    }
+
+    /* Pixel particles that burst out on hover */
+    .core-px {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 4px;
+      height: 4px;
+      margin: -2px;
+      background: var(--accent);
+      opacity: 0;
+      rotate: calc(var(--i) * 45deg + 22deg);
+      translate: 0 0;
+      transition:
+        opacity 300ms,
+        transform 600ms var(--ease-out-expo);
+      pointer-events: none;
+    }
+
+    .core-label {
+      display: grid;
+      font-family: var(--font-pixel);
+      font-size: 0.75rem;
+      line-height: 1;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--fg-subtle);
+      transition:
+        color 250ms,
+        opacity 300ms;
+    }
+
+    .core-label > * {
+      grid-area: 1 / 1;
+      text-align: center;
+      white-space: nowrap;
+      transition:
+        opacity 350ms var(--ease-out-quart),
+        translate 450ms var(--ease-out-expo);
+    }
+
+    .core-label-current {
+      opacity: 0;
+      translate: 0 4px;
+    }
+
+    @media (hover: hover) {
+      .core:hover .core-halo {
+        opacity: 0.95;
+      }
+
+      .core:hover .core-ring {
+        opacity: 0.9;
+        animation-duration: 6s;
+      }
+
+      .core:hover .core-orb {
+        scale: 1.07;
+      }
+
+      .core:hover .core-dot {
+        scale: 1.15;
+      }
+
+      .core:hover .core-px {
+        opacity: 0.9;
+        transform: translateY(calc(var(--size) * -0.82 - (var(--i) * 1px)));
+      }
+
+      .core:hover .core-label {
+        color: var(--accent-text);
+      }
+    }
+
+    /* Compact floating control once the page scrolls */
+    :global([data-core-dock][data-compact]) .core {
+      --size: 2.75rem;
+      flex-direction: row;
+      gap: 0.75rem;
+      padding: 0.3125rem 1rem 0.3125rem 0.3125rem;
+      border: 1px solid var(--border-strong);
+      background: color-mix(in oklab, var(--bg) 72%, transparent);
+      backdrop-filter: blur(16px) saturate(1.4);
+      -webkit-backdrop-filter: blur(16px) saturate(1.4);
+      box-shadow: 0 12px 32px -16px rgb(0 0 0 / 0.55);
+    }
+
+    :global([data-core-dock][data-compact]) .core-halo {
+      inset: -30%;
+      opacity: 0.4;
+    }
+
+    :global([data-core-dock][data-compact]) .core-ring {
+      inset: -4px;
+      width: calc(100% + 8px);
+      height: calc(100% + 8px);
+    }
+
+    :global([data-core-dock][data-compact]) .core-label-idle {
+      opacity: 0;
+      translate: 0 -4px;
+    }
+
+    :global([data-core-dock][data-compact]) .core-label-current {
+      opacity: 1;
+      translate: 0 0;
+      color: var(--fg);
+    }
+
+    :global([data-core-dock][data-compact]) .core-label {
+      font-size: 0.8125rem;
+      min-width: 6.5rem;
+    }
+
+    :global([data-core-dock][data-compact]) .core-label > * {
+      text-align: left;
+    }
+
+    :global([data-core-dock][data-open]) {
+      visibility: hidden;
+    }
+
+    /* ------------------------------------------------------------ */
+    /* Hub (open state)                                              */
+    /* ------------------------------------------------------------ */
+    .hub {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      max-width: none;
+      height: 100dvh;
+      max-height: none;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--fg);
+      overflow: hidden auto;
+    }
+
+    .hub::backdrop {
+      background: transparent;
+    }
+
+    .hub-scrim {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(60rem 40rem at 50% 0%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 70%),
+        color-mix(in oklab, var(--bg) 88%, transparent);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      clip-path: circle(0 at 50% var(--core-y, 3rem));
+      transition: clip-path 650ms var(--ease-out-expo);
+    }
+
+    .hub[data-state='open'] .hub-scrim {
+      clip-path: circle(160% at 50% var(--core-y, 3rem));
+    }
+
+    .core-close {
+      position: fixed;
+      top: var(--core-top, 0.875rem);
+      left: 50%;
+      translate: -50% 0;
+      z-index: 2;
+    }
+
+    .core-close .core-orb {
+      --size: 3.5rem;
+    }
+
+    .core-close .core-ring {
+      opacity: 0.9;
+      animation-duration: 8s;
+    }
+
+    .core-x {
+      position: relative;
+      color: var(--accent-text);
+    }
+
+    .hub-nav {
+      position: relative;
+      z-index: 1;
+      min-height: 100%;
+      padding: calc(var(--core-y, 3rem) + 3.5rem) 1.25rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .hub-lines {
+      display: none;
+    }
+
+    .hub-items {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hub-item {
+      opacity: 0;
+      translate: 0 -14px;
+      scale: 0.96;
+      transition:
+        opacity 450ms var(--ease-out-expo),
+        translate 600ms var(--ease-out-expo),
+        scale 600ms var(--ease-out-expo);
+      transition-delay: calc(var(--i) * 45ms + 120ms);
+    }
+
+    .hub[data-state='open'] .hub-item {
+      opacity: 1;
+      translate: 0 0;
+      scale: 1;
+    }
+
+    .hub-link {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      padding: 0.875rem 0.25rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--fg);
+      transition: color 200ms;
+    }
+
+    .hub-index {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--fg-subtle);
+      min-width: 1.5rem;
+    }
+
+    .hub-label {
+      font-family: var(--font-pixel);
+      font-size: clamp(1.75rem, 6vw, 2.25rem);
+      line-height: 1;
+      letter-spacing: 0.01em;
+    }
+
+    .hub-link:hover,
+    .hub-link:focus-visible,
+    .hub-link[aria-current] {
+      color: var(--accent-text);
+    }
+
+    .hub-link[aria-current] .hub-index::before {
+      content: '▸ ';
+    }
+
+    .hub-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      opacity: 0;
+      transition: opacity 500ms var(--ease-out-quart) 380ms;
+    }
+
+    .hub[data-state='open'] .hub-meta {
+      opacity: 1;
+    }
+
+    .hub-socials {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .hub-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      height: 2.5rem;
+      padding-inline: 0.875rem;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: color-mix(in oklab, var(--surface) 80%, transparent);
+      font-size: 0.875rem;
+      color: var(--fg-muted);
+      transition:
+        color 200ms,
+        border-color 200ms;
+    }
+
+    .hub-chip:hover {
+      color: var(--fg);
+      border-color: var(--accent-line);
+    }
+
+    .hub-chip.is-missing {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .hub-hint {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--fg-subtle);
+    }
+
+    .hub-hint kbd {
+      padding: 0.0625rem 0.375rem;
+      border: 1px solid var(--border-strong);
+      border-radius: 0.375rem;
+      font-family: inherit;
+    }
+
+    /* Desktop: destinations fan out beneath the core */
+    @media (width >= 48rem) and (height >= 34rem) {
+      .hub-nav {
+        align-items: center;
+        padding: 0;
+        gap: 0;
+      }
+
+      .hub-lines {
+        display: block;
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+        pointer-events: none;
+      }
+
+      .hub-items {
+        position: absolute;
+        inset: 0;
+        display: block;
+      }
+
+      .hub-item {
+        position: absolute;
+        left: var(--x, 50%);
+        top: var(--y, 50%);
+        translate: var(--from-x, 0) var(--from-y, 0);
+        scale: 0.6;
+      }
+
+      .hub[data-state='open'] .hub-item {
+        translate: -50% -50%;
+        scale: 1;
+      }
+
+      .hub-link {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1.25rem;
+        border: 1px solid var(--border-strong);
+        border-radius: 1rem;
+        background: color-mix(in oklab, var(--surface) 82%, transparent);
+        box-shadow: var(--shadow-card);
+        transition:
+          color 200ms,
+          border-color 250ms,
+          box-shadow 300ms,
+          translate 300ms var(--ease-out-expo);
+      }
+
+      .hub-link:hover,
+      .hub-link:focus-visible {
+        border-color: var(--accent-line);
+        box-shadow:
+          var(--shadow-card),
+          0 0 0 4px var(--accent-soft),
+          0 10px 30px -12px var(--accent-glow);
+      }
+
+      .hub-label {
+        font-size: clamp(1.5rem, 2.2vw, 2rem);
+        white-space: nowrap;
+      }
+
+      .hub-meta {
+        position: absolute;
+        left: 50%;
+        bottom: max(2rem, 6vh);
+        translate: -50% 0;
+        align-items: center;
+      }
+    }
+
+    .hub-lines :global(line) {
+      stroke: var(--accent-line);
+      stroke-width: 1;
+      stroke-dasharray: 3 6;
+      opacity: 0;
+      transition: opacity 500ms 200ms;
+    }
+
+    .hub[data-state='open'] .hub-lines :global(line) {
+      opacity: 1;
+    }
+
+    @keyframes core-spin {
+      to {
+        rotate: 360deg;
+      }
+    }
+
+    @keyframes core-breathe {
+      0%,
+      100% {
+        scale: 1;
+        opacity: 0.45;
+      }
+      50% {
+        scale: 1.12;
+        opacity: 0.7;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .core-ring,
+      .core-halo {
+        animation: none;
+      }
+
+      .hub-scrim {
+        clip-path: none;
+      }
+    }
+  }
+</style>

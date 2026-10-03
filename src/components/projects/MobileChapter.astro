@@ -1,0 +1,424 @@
+---
+/**
+ * Chapter 03, the mobile app (presentation: 'mobile').
+ *
+ * lg+: the interactive BookingPhone recreation on the left, slightly turned
+ * (-4deg); the story, the booking flow and the planned backend on the right.
+ * Below lg: title → phone → text.
+ *
+ * Hover (visual only, mouse): the phone straightens and lifts, and two small
+ * cards slide out from behind it, recreating pieces of the app's own screens
+ * (the selected 2:00 PM slot and the confirmation). On touch tablets the
+ * cards rest half out; on phones the composition is just the phone.
+ */
+import BookingPhone from '@/components/visuals/BookingPhone.astro';
+import type { Project } from '@/data/projects';
+import Chapter from './Chapter.astro';
+import ChapterHead from './ChapterHead.astro';
+import ProjectActions from './ProjectActions.astro';
+import ProjectStack from './ProjectStack.astro';
+import StageGrid from './StageGrid.astro';
+import { cardHeadingId } from './util';
+
+interface Props {
+  project: Project;
+  total: number;
+}
+
+const { project, total } = Astro.props;
+const headingId = cardHeadingId(project);
+const flowId = `${project.slug}-flow`;
+const flow = project.flow ?? [];
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+
+<Chapter project={project} total={total} numberSide="left" class="mb">
+  <div class="mb-grid">
+    <div class="mb-head">
+      <ChapterHead project={project} headingId={headingId} />
+    </div>
+
+    <div class="mb-stage" data-reveal style="--d: 1">
+      <StageGrid cell={24} />
+      <span class="mb-halo" aria-hidden="true"></span>
+      <div class="mb-rig">
+        <!-- Recreations of two pieces of the app's screens (same sample booking as the phone). -->
+        <div class="mb-cards" aria-hidden="true">
+          <div class="mb-card mb-card-slot">
+            <span class="mb-card-kicker">Time</span>
+            <span class="mb-slot">2:00 PM</span>
+            <span class="mb-card-sub">Selected</span>
+          </div>
+          <div class="mb-card mb-card-done">
+            <span class="mb-check">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                <path d="M20 6 9 17l-5-5"></path>
+              </svg>
+            </span>
+            <span class="mb-card-title">Booking confirmed</span>
+            <span class="mb-card-sub">Oct 6 · 2:00 PM</span>
+          </div>
+        </div>
+        <BookingPhone interactive size="lg" idPrefix="card-booking" />
+      </div>
+    </div>
+
+    <div class="mb-body">
+      <p class="ch-summary" data-reveal style="--d: 2">{project.summary}</p>
+
+      {
+        flow.length > 0 && (
+          <div class="mb-flow" data-reveal style="--d: 3">
+            <p class="ch-label" id={flowId}>
+              Booking flow
+            </p>
+            <ol class="mb-steps" aria-labelledby={flowId}>
+              {flow.map((step, i) => (
+                <li class="mb-step">
+                  <span class="mb-step-index" aria-hidden="true">
+                    {pad(i + 1)}
+                  </span>
+                  <span class="mb-step-label">{step.label}</span>
+                  {step.detail && <span class="mb-step-detail">{step.detail}</span>}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )
+      }
+
+      {
+        project.statusNote && (
+          <p class="mb-plan" data-reveal style="--d: 3">
+            <span class="mb-plan-tag">Planned</span>
+            <span>{project.statusNote}</span>
+          </p>
+        )
+      }
+
+      <div class="ch-foot" data-reveal style="--d: 4">
+        <ProjectStack project={project} />
+        <ProjectActions project={project} />
+      </div>
+    </div>
+  </div>
+</Chapter>
+
+<style>
+  /* ---------------------------------------------------------------- */
+  /* Layout                                                            */
+  /* ---------------------------------------------------------------- */
+
+  .mb-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'head' 'stage' 'body';
+    row-gap: 2.5rem;
+  }
+
+  .mb-head {
+    grid-area: head;
+  }
+
+  .mb-body {
+    grid-area: body;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    min-width: 0;
+  }
+
+  @media (min-width: 64rem) {
+    .mb-grid {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      grid-template-rows: auto 1fr;
+      grid-template-areas:
+        'stage head'
+        'stage body';
+      column-gap: 4rem;
+      row-gap: 2rem;
+    }
+
+    .mb-head {
+      padding-top: 2.75rem;
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Stage                                                             */
+  /* ---------------------------------------------------------------- */
+
+  .mb-stage {
+    grid-area: stage;
+    position: relative;
+    isolation: isolate;
+    container-type: inline-size;
+    min-width: 0;
+    padding-top: 0.5rem;
+  }
+
+  .mb-halo {
+    position: absolute;
+    z-index: -1;
+    top: 40%;
+    left: 50%;
+    width: min(36rem, 115%);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, color-mix(in oklab, var(--pixel) 9%, transparent), transparent);
+    opacity: 0.75;
+    translate: -50% -50%;
+    pointer-events: none;
+    transition:
+      opacity 700ms var(--ease-out-quart),
+      scale 900ms var(--ease-out-expo);
+  }
+
+  .mb-rig {
+    position: relative;
+  }
+
+  .mb-rig > :global(.bp) {
+    position: relative;
+    z-index: 1;
+  }
+
+  .mb-rig :global(.bp-device) {
+    transition:
+      rotate 800ms var(--ease-out-expo),
+      translate 800ms var(--ease-out-expo);
+  }
+
+  /* Cards live in a band as tall as the lg device (300 × 650) and start
+     centered behind it. Out, each sits beside the phone (the slot card
+     tucked slightly behind it, the confirmation just clear of it), but never
+     past the stage edge plus a little of the gutter, so they stay clear of
+     the text column at every width. */
+  .mb-cards {
+    display: none;
+    position: absolute;
+    z-index: 0;
+    inset: 0 0 auto;
+    height: 650px;
+    pointer-events: none;
+  }
+
+  @media (min-width: 40rem) {
+    .mb-cards {
+      display: block;
+    }
+  }
+
+  /* App identity colors (warm off-white, #A8C76A), as in the recreated screens. */
+  .mb-card {
+    --w: 7.5rem;
+    position: absolute;
+    left: calc(50% - var(--w) / 2);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+    width: var(--w);
+    padding: 0.75rem;
+    border: 1px solid #dcdcd5;
+    border-radius: 0.875rem;
+    background: #fff;
+    color: #151515;
+    font-family: var(--font-sans);
+    font-feature-settings: normal;
+    box-shadow:
+      0 1px 0 rgb(0 0 0 / 0.04),
+      0 18px 40px -18px rgb(0 0 0 / 0.5);
+    rotate: -4deg;
+    transition:
+      translate 900ms var(--ease-out-expo),
+      rotate 900ms var(--ease-out-expo);
+  }
+
+  .mb-card-slot {
+    top: 30%;
+    --out: max(-1 * (50cqw - var(--w) / 2 + 1rem), -1 * (150px + var(--w) / 2 - 0.5rem));
+  }
+
+  .mb-card-done {
+    --w: 9.5rem;
+    top: 55%;
+    background: #f5f4ef;
+    --out: min(50cqw - var(--w) / 2 + 3rem, 150px + var(--w) / 2 + 0.25rem);
+  }
+
+  .mb-card-kicker {
+    color: #92928b;
+    font-size: 0.6875rem;
+    font-weight: 500;
+  }
+
+  .mb-slot {
+    display: grid;
+    place-items: center;
+    align-self: stretch;
+    height: 2.125rem;
+    border: 1px solid #a8c76a;
+    border-radius: 0.5rem;
+    background: #a8c76a;
+    color: #151515;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mb-card-sub {
+    color: #6b6b65;
+    font-size: 0.6875rem;
+    line-height: 1.3;
+  }
+
+  .mb-check {
+    display: grid;
+    place-items: center;
+    width: 1.625rem;
+    height: 1.625rem;
+    border: 1.5px solid #a8c76a;
+    border-radius: 50%;
+    background: #efeee7;
+    color: #718a42;
+  }
+
+  .mb-card-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  /* Touch tablets: no hover, so the cards rest out. */
+  @media (min-width: 40rem) and (hover: none) {
+    .mb-card {
+      translate: var(--out) 0;
+    }
+  }
+
+  @media (min-width: 48rem) and (hover: hover) {
+    .mb-rig :global(.bp-device) {
+      rotate: -4deg;
+    }
+
+    .mb-stage:hover .mb-rig :global(.bp-device),
+    .mb-stage:focus-within .mb-rig :global(.bp-device) {
+      rotate: 0deg;
+      translate: 0 -6px;
+    }
+
+    .mb-stage:hover .mb-card,
+    .mb-stage:focus-within .mb-card {
+      translate: var(--out) -0.375rem;
+    }
+
+    .mb-stage:hover .mb-card-slot,
+    .mb-stage:focus-within .mb-card-slot {
+      rotate: -7deg;
+    }
+
+    .mb-stage:hover .mb-card-done,
+    .mb-stage:focus-within .mb-card-done {
+      rotate: 4deg;
+      transition-delay: 80ms;
+    }
+
+    .mb-stage:hover .mb-halo {
+      opacity: 1;
+      scale: 1.08;
+    }
+  }
+
+  /* Entrance: the phone rises a little further than the text. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) .mb-stage[data-reveal] {
+      transform: translateY(2.5rem) scale(0.97);
+      transition-duration: 1100ms;
+    }
+
+    :global(html.js) .mb-stage[data-reveal]:global(.is-visible) {
+      transform: none;
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Flow + planned backend                                            */
+  /* ---------------------------------------------------------------- */
+
+  .mb-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+  }
+
+  .mb-steps {
+    display: grid;
+    gap: 0.875rem 1.5rem;
+  }
+
+  @media (min-width: 30rem) {
+    .mb-steps {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .mb-step {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .mb-step-index {
+    grid-row: span 2;
+    color: var(--accent-text);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1.25rem;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mb-step-label {
+    color: var(--fg);
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    letter-spacing: -0.01em;
+  }
+
+  .mb-step-detail {
+    color: var(--fg-subtle);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+
+  .mb-plan {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    max-width: 60ch;
+    padding-left: 1rem;
+    border-left: 1px dashed var(--border-hover);
+    color: var(--fg-muted);
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+
+  .mb-plan-tag {
+    flex: none;
+    margin-top: 0.125rem;
+    padding: 0.0625rem 0.4375rem;
+    border: 1px dashed var(--border-hover);
+    border-radius: 0.3125rem;
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    line-height: 1rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+</style>

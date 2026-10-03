@@ -1,0 +1,215 @@
+---
+/**
+ * Reserved space for a screenshot that hasn't been added yet. Keeps the final
+ * aspect ratio (16:10 desktop, 9:19.5 phone) so swapping in the real image
+ * causes no layout change. Renders nothing when `site.showPlaceholders` is false.
+ */
+import Icon from './Icon.astro';
+import { site } from '@/data/site';
+import { cn } from '@/lib/cn';
+
+interface Props {
+  label: string;
+  kind?: 'desktop' | 'mobile';
+  class?: string;
+}
+
+const { label, kind = 'desktop', class: className } = Astro.props;
+---
+
+{
+  site.showPlaceholders && (
+    <div class={cn('image-ph', className)} data-kind={kind}>
+      <span class="ph-mark ph-tl" aria-hidden="true" />
+      <span class="ph-mark ph-tr" aria-hidden="true" />
+      <span class="ph-mark ph-bl" aria-hidden="true" />
+      <span class="ph-mark ph-br" aria-hidden="true" />
+      <span class="ph-ratio" aria-hidden="true">
+        {kind === 'mobile' ? '9 : 19.5' : '16 : 10'}
+      </span>
+      <div class="ph-body">
+        <span class="ph-icon" aria-hidden="true">
+          <Icon name={kind === 'mobile' ? 'smartphone' : 'image'} size={18} strokeWidth={1.5} />
+        </span>
+        <p class="ph-label">
+          <span>Screenshot</span>
+          <span class="ph-sep" aria-hidden="true">·</span>
+          <span class="ph-name">{label}</span>
+        </p>
+        <p class="ph-hint">To be added</p>
+      </div>
+    </div>
+  )
+}
+
+<style>
+  .image-ph {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border: 1px dashed var(--border-strong);
+    border-radius: 0.875rem;
+    color: var(--fg-subtle);
+    /* Drafting-style hatch that fades out behind the label. */
+    background:
+      radial-gradient(ellipse 60% 55% at center, var(--bg-elevated) 30%, transparent 100%),
+      repeating-linear-gradient(-45deg, transparent 0 9px, var(--border) 9px 10px),
+      var(--bg-elevated);
+  }
+
+  .image-ph[data-kind='mobile'] {
+    aspect-ratio: 9 / 19.5;
+    border-radius: 2.25rem;
+  }
+
+  /* Crop marks, inset so nothing spills outside the box. */
+  .ph-mark {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    color: var(--fg-faint);
+    pointer-events: none;
+  }
+
+  .ph-mark::before,
+  .ph-mark::after {
+    content: '';
+    position: absolute;
+    background: currentColor;
+  }
+
+  .ph-mark::before {
+    left: 0;
+    top: 0;
+    width: 1px;
+    height: 10px;
+  }
+
+  .ph-mark::after {
+    left: 0;
+    top: 0;
+    width: 10px;
+    height: 1px;
+  }
+
+  .ph-tl {
+    top: 0.875rem;
+    left: 0.875rem;
+  }
+
+  .ph-tr {
+    top: 0.875rem;
+    right: 0.875rem;
+    transform: scaleX(-1);
+  }
+
+  .ph-bl {
+    bottom: 0.875rem;
+    left: 0.875rem;
+    transform: scaleY(-1);
+  }
+
+  .ph-br {
+    bottom: 0.875rem;
+    right: 0.875rem;
+    transform: scale(-1);
+  }
+
+  .image-ph[data-kind='mobile'] .ph-tl,
+  .image-ph[data-kind='mobile'] .ph-tr {
+    top: 1.75rem;
+  }
+
+  .image-ph[data-kind='mobile'] .ph-bl,
+  .image-ph[data-kind='mobile'] .ph-br {
+    bottom: 1.75rem;
+  }
+
+  .image-ph[data-kind='mobile'] .ph-tl,
+  .image-ph[data-kind='mobile'] .ph-bl {
+    left: 1.25rem;
+  }
+
+  .image-ph[data-kind='mobile'] .ph-tr,
+  .image-ph[data-kind='mobile'] .ph-br {
+    right: 1.25rem;
+  }
+
+  .ph-ratio {
+    position: absolute;
+    right: 2rem;
+    bottom: 0.75rem;
+    color: var(--fg-faint);
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.06em;
+  }
+
+  .image-ph[data-kind='mobile'] .ph-ratio {
+    right: 50%;
+    bottom: 1rem;
+    transform: translateX(50%);
+  }
+
+  .ph-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 100%;
+    padding: 1.5rem 1.25rem;
+    text-align: center;
+  }
+
+  .ph-icon {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-bottom: 0.25rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    color: var(--fg-muted);
+    box-shadow: var(--shadow-card);
+  }
+
+  .ph-label {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    column-gap: 0.4rem;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+  }
+
+  .ph-name {
+    color: var(--fg);
+  }
+
+  .ph-sep {
+    color: var(--fg-faint);
+  }
+
+  .ph-hint {
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .image-ph[data-kind='mobile'] .ph-label {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .image-ph[data-kind='mobile'] .ph-sep {
+    display: none;
+  }
+</style>

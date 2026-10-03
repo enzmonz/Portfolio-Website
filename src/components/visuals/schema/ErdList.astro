@@ -1,0 +1,267 @@
+---
+/**
+ * Narrow-width rendering of the ERD: entities stacked vertically, each with
+ * its outgoing relationships hanging off it as tree rows.
+ *
+ * `detailed` (full variant) shows every entity as a small table card with its
+ * key columns. Otherwise (card variant) it is a compact relationship tree and
+ * is hidden from assistive technology, because SchemaDiagram's sr-only list
+ * already describes the same relationships.
+ */
+import { strokeIcons } from '@/components/ui/icons';
+import { compactCardinality, keyWords, type Schema } from './layout';
+
+interface Props {
+  schema: Schema;
+  detailed?: boolean;
+}
+
+const { schema, detailed = false } = Astro.props;
+const outgoing = (name: string) => schema.relations.filter((r) => r.from === name);
+const items = detailed ? schema.entities : schema.entities.filter((e) => outgoing(e.name).length > 0);
+---
+
+<ol class:list={['erdl', detailed && 'erdl--detailed']} role="list" aria-hidden={detailed ? undefined : 'true'}>
+  {
+    items.map((entity) => {
+      const rels = outgoing(entity.name);
+      return (
+        <li class="item">
+          <div class="entity">
+            <div class="head">
+              <svg
+                class="icon"
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.9"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+                focusable="false"
+                set:html={strokeIcons.table}
+              />
+              <span class="name">{entity.name}</span>
+            </div>
+            {detailed && (
+              <ul class="keys" role="list">
+                {entity.keys.map((key) => (
+                  <li class="key" data-kind={key.kind.toLowerCase()}>
+                    <span class="badge" aria-hidden="true">
+                      {key.kind}
+                    </span>
+                    <span class="col">{key.name}</span>
+                    <span class="sr-only">, {keyWords(key.kind)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {rels.length > 0 && (
+            <ul class="rels" role="list" aria-hidden="true">
+              {rels.map((rel) => (
+                <li class="rel">
+                  <span class="verb">{rel.label}</span>
+                  <span class="card">{compactCardinality(rel.cardinality)}</span>
+                  <svg
+                    class="arrow"
+                    viewBox="0 0 24 24"
+                    width="12"
+                    height="12"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                    focusable="false"
+                    set:html={strokeIcons['arrow-right']}
+                  />
+                  <span class="target">{rel.to}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      );
+    })
+  }
+</ol>
+
+<style>
+  .erdl {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .item {
+    min-width: 0;
+  }
+
+  /* ---------------- Entity ---------------- */
+
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 1.5rem;
+  }
+
+  .icon {
+    flex: none;
+    color: var(--fg-subtle);
+  }
+
+  .name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--fg);
+  }
+
+  .erdl--detailed .entity {
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    border-radius: 0.625rem;
+    background: var(--erd-fill, var(--surface));
+  }
+
+  .erdl--detailed .head {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--erd-head, var(--surface-2));
+  }
+
+  .keys {
+    display: grid;
+    gap: 0.125rem;
+    margin: 0;
+    padding: 0.5rem 0.75rem 0.625rem;
+    list-style: none;
+  }
+
+  .key {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 1.5rem;
+    min-width: 0;
+  }
+
+  .badge {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 1.5rem;
+    height: 1rem;
+    border: 1px solid;
+    border-radius: 0.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  .key[data-kind='pk'] .badge {
+    color: var(--accent-text);
+    background: var(--accent-soft);
+    border-color: var(--accent-line);
+  }
+
+  .key[data-kind='fk'] .badge {
+    color: var(--info);
+    background: var(--info-soft);
+    border-color: color-mix(in oklab, var(--info) 38%, transparent);
+  }
+
+  .col {
+    overflow: hidden;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--fg-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .key[data-kind='pk'] .col {
+    color: var(--fg);
+  }
+
+  /* ---------------- Relationship tree ---------------- */
+
+  .rels {
+    margin: 0.25rem 0 0 0.4375rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .erdl--detailed .rels {
+    margin: 0 0 0 1.1875rem;
+    padding-top: 0.25rem;
+  }
+
+  .rel {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 0.5rem;
+    min-height: 1.875rem;
+    padding-left: 1.375rem;
+  }
+
+  /* └ elbow into each row, │ continuing to the next */
+  .rel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0.875rem;
+    height: 50%;
+    border-bottom: 1px solid var(--border-strong);
+    border-left: 1px solid var(--border-strong);
+    border-bottom-left-radius: 0.375rem;
+  }
+
+  .rel:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    bottom: 0;
+    left: 0;
+    border-left: 1px solid var(--border-strong);
+  }
+
+  .verb {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--fg-muted);
+  }
+
+  .card {
+    padding: 0.0625rem 0.3125rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 0.3125rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--fg-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .arrow {
+    flex: none;
+    color: var(--fg-faint);
+  }
+
+  .target {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--fg);
+  }
+</style>

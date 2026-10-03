@@ -1,0 +1,472 @@
+---
+/**
+ * Home hero (#home). Holds the page's only <h1>.
+ * Pixel display name + copy on the left, portrait with an overlapping terminal and
+ * floating stack chips on the right. On phones the portrait sits between name and copy.
+ */
+import Icon from '@/components/ui/Icon.astro';
+import LinkButton from '@/components/ui/LinkButton.astro';
+import TechIcon from '@/components/ui/TechIcon.astro';
+import HeroTerminal from '@/components/hero/HeroTerminal.astro';
+import ProfilePhoto from '@/components/ProfilePhoto/ProfilePhoto.astro';
+import { site } from '@/data/site';
+import { socialLink } from '@/lib/links';
+
+const email = socialLink('email');
+const linkedin = socialLink('linkedin');
+const github = socialLink('github');
+
+const [firstName, ...rest] = site.name.split(' ');
+const lastName = rest.join(' ');
+const affiliation = `${site.school.program} @ ${site.school.short}`;
+
+const chips = [
+  { name: 'React', cls: 'chip-a' },
+  { name: 'TypeScript', cls: 'chip-b' },
+  { name: 'PostgreSQL', cls: 'chip-c' },
+  { name: 'Node.js', cls: 'chip-d' },
+  { name: 'REST API', cls: 'chip-e' },
+];
+const band = ['Full-stack development', 'System design', 'Databases', 'Software engineering'];
+---
+
+<section id="home" aria-labelledby="hero-title" class="hero relative isolate overflow-x-clip" data-hero>
+  <div class="hero-grid" aria-hidden="true"><div class="hero-grid-plane bg-grid"></div></div>
+  <div class="hero-glow" aria-hidden="true"></div>
+
+  <div class="container-page hero-layout relative">
+    <div class="h-head">
+      {
+        site.availability && (
+          <p class="hero-pill enter" style="--d: 0">
+            <span class="live-dot" aria-hidden="true" />
+            <span>{site.availability}</span>
+          </p>
+        )
+      }
+      <h1 id="hero-title" class="hero-name text-display mt-6 text-fg sm:mt-7">
+        <span class="mask-line"><span style="--d: 1">{firstName}</span></span>{' '}
+        <span class="mask-line"
+          ><span style="--d: 2">{lastName}<span class="hero-period" aria-hidden="true"></span></span></span
+        >
+      </h1>
+    </div>
+
+    <div class="h-photo enter" style="--d: 4">
+      <div class="photo-stage">
+        <ProfilePhoto />
+        <ul class="hero-chips" aria-hidden="true">
+          {
+            chips.map((c) => (
+              <li class={`hero-chip ${c.cls}`}>
+                <TechIcon name={c.name} size={12} />
+                {c.name}
+              </li>
+            ))
+          }
+        </ul>
+        <div class="hero-term">
+          <HeroTerminal />
+        </div>
+      </div>
+    </div>
+
+    <div class="h-body">
+      <p class="enter flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-4" style="--d: 4">
+        <span class="font-pixel text-[1.5rem] leading-tight text-fg sm:text-[1.75rem]">{site.title}</span>
+        <span class="sr-only">, </span>
+        <span class="hidden h-5 w-px bg-border-strong sm:block" aria-hidden="true"></span>
+        <span class="font-mono text-[0.8125rem] tracking-[0.01em] text-fg-subtle sm:text-sm">{affiliation}</span>
+      </p>
+
+      <p class="enter text-lede mt-5 max-w-[34rem] text-fg-muted" style="--d: 5">{site.tagline}</p>
+
+      <p class="enter mt-4 flex items-start gap-2.5 text-sm leading-relaxed text-fg-subtle" style="--d: 6">
+        <Icon name="graduation-cap" size={16} class="mt-[3px] flex-none" />
+        <span>{site.school.program} student at {site.school.name}.</span>
+      </p>
+
+      <div class="enter mt-8 flex flex-wrap items-center gap-2.5 sm:gap-3" style="--d: 7">
+        <LinkButton
+          href="#projects"
+          label="View Projects"
+          variant="primary"
+          trailing="down"
+          class="w-full xs:w-auto"
+          data-magnetic
+        />
+        <LinkButton href={email.href} label="Email" variant="secondary" icon="mail" missing={email.missing} data-magnetic />
+        <LinkButton
+          href={linkedin.href}
+          label="LinkedIn"
+          variant="secondary"
+          icon="linkedin-brand"
+          external={linkedin.external}
+          missing={linkedin.missing}
+          data-magnetic
+        />
+        <LinkButton
+          href={github.href}
+          label="GitHub"
+          variant="ghost"
+          icon="github"
+          external={github.external}
+          missing={github.missing}
+        />
+      </div>
+
+      <p class="enter mt-9 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-label text-fg-subtle" style="--d: 8">
+        <span class="mr-1 h-px w-6 bg-border-strong" aria-hidden="true"></span>
+        {
+          site.positioning.map((item, i) => (
+            <>
+              {i > 0 && (
+                <span class="text-fg-faint" aria-hidden="true">
+                  ·
+                </span>
+              )}
+              <span>
+                {item}
+                {i < site.positioning.length - 1 && <span class="sr-only">,</span>}
+              </span>
+            </>
+          ))
+        }
+      </p>
+    </div>
+  </div>
+
+  <!-- Giant focus band: drifts sideways, a slow ticker of what Enzo focuses on -->
+  <div class="hero-band" aria-hidden="true">
+    <div class="hero-band-track">
+      {
+        [0, 1].map(() => (
+          <span>
+            {band.map((b) => (
+              <>
+                {b}
+                <i />
+              </>
+            ))}
+          </span>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    padding-top: 7.5rem;
+    padding-bottom: 1.5rem;
+  }
+
+  @media (width >= 64rem) {
+    .hero {
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 8.5rem;
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Layout                                                            */
+  /* ---------------------------------------------------------------- */
+  .hero-layout {
+    display: grid;
+    grid-template-areas: 'head' 'photo' 'body';
+    row-gap: 2.5rem;
+  }
+
+  .h-head {
+    grid-area: head;
+  }
+  .h-photo {
+    grid-area: photo;
+  }
+  .h-body {
+    grid-area: body;
+  }
+
+  @media (width >= 64rem) {
+    .hero-layout {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      grid-template-areas: 'head photo' 'body photo';
+      grid-template-rows: auto 1fr;
+      column-gap: 4rem;
+      row-gap: 1.75rem;
+      align-items: start;
+    }
+
+    .h-photo {
+      align-self: center;
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Atmosphere                                                        */
+  /* ---------------------------------------------------------------- */
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    -webkit-mask-image: radial-gradient(ellipse 90% 60% at 60% 30%, #000 20%, transparent 75%);
+    mask-image: radial-gradient(ellipse 90% 60% at 60% 30%, #000 20%, transparent 75%);
+  }
+
+  .hero-grid-plane {
+    position: absolute;
+    inset: -48px;
+    animation: hero-grid-pan 40s linear infinite;
+  }
+
+  /* Soft glow that follows the pointer (position set by the script below). */
+  .hero-glow {
+    position: absolute;
+    left: var(--gx, 70%);
+    top: var(--gy, 40%);
+    width: 42rem;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    border-radius: 999px;
+    background: radial-gradient(closest-side, var(--accent-glow), transparent);
+    opacity: 0.16;
+    pointer-events: none;
+    transition:
+      left 900ms var(--ease-out-expo),
+      top 900ms var(--ease-out-expo);
+    z-index: -1;
+  }
+
+  .hero-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    max-width: 100%;
+    min-height: 2rem;
+    padding: 0.3125rem 0.875rem 0.3125rem 0.75rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--surface) 72%, transparent);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.25;
+    letter-spacing: 0.01em;
+    color: var(--fg-muted);
+  }
+
+  .hero-name {
+    text-shadow: 0 0 40px color-mix(in oklab, var(--accent) 12%, transparent);
+  }
+
+  @media (width < 40rem) {
+    .hero-name {
+      font-size: clamp(3.5rem, 19vw, 5.25rem);
+    }
+  }
+
+  .hero-period {
+    display: inline-block;
+    width: 0.16em;
+    height: 0.16em;
+    margin-left: 0.06em;
+    background: var(--accent);
+    box-shadow: 0 0 18px var(--accent-glow);
+    animation: caret 1.2s steps(1) infinite 2.2s;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Portrait stage                                                    */
+  /* ---------------------------------------------------------------- */
+  .photo-stage {
+    position: relative;
+    width: min(100%, 17.5rem);
+    margin-bottom: 1.5rem;
+  }
+
+  @media (width >= 40rem) {
+    .photo-stage {
+      width: min(100%, 21rem);
+    }
+  }
+
+  @media (width >= 64rem) {
+    .photo-stage {
+      width: min(100%, 23rem);
+      margin: 0 0 3rem auto;
+    }
+  }
+
+  .hero-term {
+    display: none;
+  }
+
+  @media (width >= 40rem) {
+    .hero-term {
+      display: block;
+      position: absolute;
+      z-index: 2;
+      left: calc(100% - 3rem);
+      bottom: 1.75rem;
+      width: 17.5rem;
+    }
+  }
+
+  @media (width >= 64rem) {
+    .hero-term {
+      left: -9.5rem;
+      bottom: -3.25rem;
+      width: 17rem;
+    }
+  }
+
+  .hero-term :global(.term) {
+    zoom: 0.8;
+  }
+
+  .hero-chips {
+    display: none;
+  }
+
+  @media (width >= 64rem) {
+    .hero-chips {
+      display: block;
+    }
+
+    .hero-chip {
+      position: absolute;
+      z-index: 3;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      height: 1.75rem;
+      padding-inline: 0.625rem;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: color-mix(in oklab, var(--surface) 86%, transparent);
+      backdrop-filter: blur(6px);
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      color: var(--fg-muted);
+      box-shadow: var(--shadow-card);
+      animation: chip-float 7s ease-in-out infinite alternate;
+    }
+
+    .chip-a {
+      top: 8%;
+      left: -2.75rem;
+      animation-delay: -1s;
+    }
+    .chip-b {
+      top: -1.25rem;
+      right: 2rem;
+      animation-delay: -3s;
+    }
+    .chip-c {
+      top: 38%;
+      right: -3.25rem;
+      animation-delay: -5s;
+    }
+    .chip-d {
+      bottom: 22%;
+      right: -2.5rem;
+      animation-delay: -2s;
+    }
+    .chip-e {
+      top: 30%;
+      left: -3.75rem;
+      animation-delay: -4s;
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Focus band                                                        */
+  /* ---------------------------------------------------------------- */
+  .hero-band {
+    position: relative;
+    margin-top: 3.5rem;
+    overflow: hidden;
+    border-block: 1px solid var(--border);
+    padding-block: 0.875rem;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  }
+
+  .hero-band-track {
+    display: flex;
+    width: max-content;
+    font-family: var(--font-pixel);
+    font-size: clamp(1.25rem, 2.4vw, 2rem);
+    line-height: 1;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, var(--fg) 22%, transparent);
+    white-space: nowrap;
+    animation: band-move 38s linear infinite;
+  }
+
+  .hero-band-track > span {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .hero-band-track i {
+    display: inline-block;
+    width: 0.4em;
+    height: 0.4em;
+    margin-inline: 1.1em;
+    background: var(--accent);
+    opacity: 0.7;
+  }
+
+  @keyframes band-move {
+    to {
+      translate: -50% 0;
+    }
+  }
+
+  @keyframes hero-grid-pan {
+    to {
+      transform: translate3d(48px, 48px, 0);
+    }
+  }
+
+  @keyframes chip-float {
+    from {
+      translate: 0 -4px;
+    }
+    to {
+      translate: 0 5px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero .enter,
+    .hero .mask-line > span,
+    .hero-grid-plane,
+    .hero-band-track,
+    .hero-chip,
+    .hero-period {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  // Pointer-following glow inside the hero (fine pointers only).
+  const hero = document.querySelector<HTMLElement>('[data-hero]');
+  if (hero && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    let frame = 0;
+    hero.addEventListener('pointermove', (event) => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const r = hero.getBoundingClientRect();
+        hero.style.setProperty('--gx', `${event.clientX - r.left}px`);
+        hero.style.setProperty('--gy', `${event.clientY - r.top}px`);
+      });
+    });
+  }
+</script>

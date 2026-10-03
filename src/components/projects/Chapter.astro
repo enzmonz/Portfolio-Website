@@ -1,0 +1,202 @@
+---
+/**
+ * One project "chapter" of the Selected work section. No card: a hairline
+ * rule with mono coordinates opens it, a huge outlined pixel numeral sits
+ * behind the content, and the chapter's own composition fills the slot.
+ *
+ * Also defines the text styles every chapter shares, as global classes
+ * scoped under `.ch`: .ch-summary, .ch-label, .ch-note, .ch-foot.
+ */
+import type { Project } from '@/data/projects';
+import { cn } from '@/lib/cn';
+import { cardHeadingId, caseStudyHref } from './util';
+
+interface Props {
+  project: Project;
+  /** Number of chapters, for the "01/04" coordinate. */
+  total: number;
+  /** Side the big numeral sits on from lg up (below lg it is always top-right). */
+  numberSide?: 'left' | 'right';
+  class?: string;
+}
+
+const { project, total, numberSide = 'left', class: className } = Astro.props;
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+
+<article class={cn('ch', className)} aria-labelledby={cardHeadingId(project)} data-number={numberSide}>
+  <div class="ch-rule" data-inview aria-hidden="true">
+    <span class="ch-coord ch-index">{project.index}<span class="ch-total">/{pad(total)}</span></span>
+    <span class="ch-line"></span>
+    <span class="ch-coord">{caseStudyHref(project)}</span>
+  </div>
+  <span class="ch-num" aria-hidden="true">{project.index}</span>
+  <slot />
+</article>
+
+<style>
+  .ch {
+    position: relative;
+    isolation: isolate;
+  }
+
+  /* ---------------- Rule with coordinates ---------------- */
+
+  .ch-rule {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    margin-bottom: 2rem;
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.04em;
+  }
+
+  .ch-coord {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  .ch-index {
+    color: var(--accent-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ch-total {
+    color: var(--fg-subtle);
+  }
+
+  .ch-line {
+    position: relative;
+    flex: 1;
+    min-width: 1.5rem;
+    height: 1px;
+    background: var(--border-strong);
+    transform-origin: left center;
+  }
+
+  /* Registration ticks at both ends of the rule. */
+  .ch-line::before,
+  .ch-line::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    width: 1px;
+    height: 7px;
+    background: var(--border-hover);
+  }
+
+  .ch-line::before {
+    left: 0;
+  }
+
+  .ch-line::after {
+    right: 0;
+  }
+
+  :global(html.js) .ch-line {
+    transition: transform 1300ms var(--ease-out-expo) 120ms;
+  }
+
+  :global(html.js) .ch-rule:not([data-visible='true']) .ch-line {
+    transform: scaleX(0);
+  }
+
+  @media (min-width: 64rem) {
+    .ch-rule {
+      margin-bottom: 2.5rem;
+    }
+  }
+
+  /* ---------------- Big numeral ---------------- */
+
+  .ch-num {
+    position: absolute;
+    z-index: -1;
+    top: 1.75rem;
+    right: -0.04em;
+    font-family: var(--font-pixel);
+    font-size: clamp(6.5rem, 12vw + 2.5rem, 15rem);
+    font-weight: 600;
+    line-height: 0.8;
+    letter-spacing: 0;
+    color: color-mix(in oklab, var(--pixel) 4%, transparent);
+    -webkit-text-stroke: 1px color-mix(in oklab, var(--fg) 13%, transparent);
+    pointer-events: none;
+    user-select: none;
+    transition:
+      color 700ms var(--ease-out-quart),
+      -webkit-text-stroke-color 700ms var(--ease-out-quart),
+      translate 900ms var(--ease-out-expo);
+  }
+
+  @media (min-width: 64rem) {
+    .ch-num {
+      top: 2.5rem;
+    }
+
+    .ch[data-number='left'] .ch-num {
+      right: auto;
+      left: -0.06em;
+    }
+  }
+
+  @media (hover: hover) {
+    .ch:hover .ch-num {
+      color: color-mix(in oklab, var(--pixel) 7%, transparent);
+      -webkit-text-stroke-color: color-mix(in oklab, var(--pixel) 40%, transparent);
+    }
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .ch[data-number='left']:hover .ch-num {
+      translate: 0.04em 0;
+    }
+
+    .ch[data-number='right']:hover .ch-num {
+      translate: -0.04em 0;
+    }
+  }
+
+  /* ---------------- Shared chapter text ---------------- */
+
+  .ch :global(.ch-summary) {
+    max-width: 60ch;
+    color: var(--fg-muted);
+    font-size: 0.96875rem;
+    line-height: 1.7;
+  }
+
+  .ch :global(.ch-label) {
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .ch :global(.ch-note) {
+    display: flex;
+    gap: 0.625rem;
+    max-width: 60ch;
+    color: var(--fg-subtle);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+
+  .ch :global(.ch-note > svg) {
+    flex: none;
+    margin-top: 0.1875rem;
+  }
+
+  /* Stack + actions block that closes a chapter's text. */
+  .ch :global(.ch-foot) {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+  }
+</style>

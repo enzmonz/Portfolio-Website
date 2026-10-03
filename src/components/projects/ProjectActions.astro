@@ -1,0 +1,79 @@
+---
+/**
+ * Card actions: the case study (prefetched on hover), the repository and,
+ * when one exists, a live demo. Link text names the project for screen
+ * readers, since every card repeats the same visible labels.
+ */
+import Icon from '@/components/ui/Icon.astro';
+import LinkButton from '@/components/ui/LinkButton.astro';
+import type { Project } from '@/data/projects';
+import { site } from '@/data/site';
+import { cn } from '@/lib/cn';
+import { optionalLink } from '@/lib/links';
+import { caseStudyHref } from './util';
+
+interface Props {
+  project: Project;
+  /** The flagship gets the accent button; the rest stay secondary so green stays rare. */
+  emphasis?: 'primary' | 'secondary';
+  /** Leave the repository link out entirely (e.g. a design project with no code). */
+  github?: boolean;
+  class?: string;
+}
+
+const { project, emphasis = 'secondary', github: withGithub = true, class: className } = Astro.props;
+
+const repo = optionalLink('GitHub', project.links.github, 'GitHub link not added yet');
+const demo = optionalLink('Live demo', project.links.demo, '');
+const name = project.shortTitle;
+---
+
+<div class={cn('flex flex-wrap items-center gap-3', className)}>
+  <a
+    href={caseStudyHref(project)}
+    class={cn('btn', emphasis === 'primary' ? 'btn-primary' : 'btn-secondary')}
+    data-astro-prefetch
+    data-magnetic
+  >
+    <span>View case study</span>
+    <span class="sr-only">: {name}</span>
+    <Icon name="arrow-right" class="btn-arrow" />
+  </a>
+
+  {
+    demo.href && (
+      <a href={demo.href} class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+        <span>Live demo</span>
+        <span class="sr-only">
+          {' '}
+          of {name} (opens in a new tab)
+        </span>
+        <Icon name="arrow-up-right" class="btn-arrow" />
+      </a>
+    )
+  }
+
+  {
+    withGithub &&
+      (repo.href ? (
+        <a
+          href={repo.href}
+          class={cn('btn', emphasis === 'primary' ? 'btn-secondary' : 'btn-ghost')}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Icon name="github" />
+          <span>GitHub</span>
+          <span class="sr-only">
+            {' '}
+            repository for {name} (opens in a new tab)
+          </span>
+          <Icon name="arrow-up-right" class="btn-arrow" />
+        </a>
+      ) : (
+        site.showPlaceholders && (
+          <LinkButton href={null} label="GitHub" icon="github" variant="ghost" missing={repo.missing} />
+        )
+      ))
+  }
+</div>

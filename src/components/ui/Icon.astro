@@ -1,0 +1,52 @@
+---
+/**
+ * Inline stroke icons (24×24, Lucide-style geometry). Decorative by default;
+ * pass `label` to expose the icon to assistive technology.
+ */
+import { techIcons } from './tech-icons';
+import { brandIcons, strokeIcons, type IconName } from './icons';
+
+interface Props {
+  name: IconName;
+  class?: string;
+  size?: number;
+  label?: string;
+  strokeWidth?: number;
+}
+
+const { name, class: className, size = 16, label, strokeWidth = 1.75 } = Astro.props;
+const a11y = label ? { role: 'img' as const, 'aria-label': label } : { 'aria-hidden': 'true' as const };
+---
+
+{
+  name === 'github' || name === 'linkedin-brand' ? (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="currentColor"
+      class={className}
+      focusable="false"
+      {...a11y}
+    >
+      <path d={name === 'github' ? techIcons.github : brandIcons.linkedin} />
+    </svg>
+  ) : (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      stroke-width={strokeWidth}
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class={className}
+      focusable="false"
+      {...a11y}
+      set:html={strokeIcons[name as keyof typeof strokeIcons]}
+    />
+  )
+}

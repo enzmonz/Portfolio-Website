@@ -1,0 +1,35 @@
+---
+/**
+ * Labelled list of a project's technologies. Each chip carries its own
+ * availability, so planned / partial items are marked in text, not color alone.
+ */
+import TechChip from '@/components/ui/TechChip.astro';
+import type { Project } from '@/data/projects';
+import { cn } from '@/lib/cn';
+
+interface Props {
+  project: Project;
+  label?: string;
+  class?: string;
+}
+
+const { project, label = 'Stack', class: className } = Astro.props;
+const id = `${project.slug}-stack`;
+---
+
+{
+  project.stack.length > 0 && (
+    <div class={cn('flex min-w-0 flex-col gap-3', className)}>
+      <p id={id} class="text-label tracking-[0.08em] text-fg-subtle uppercase">
+        {label}
+      </p>
+      <ul class="flex flex-wrap gap-2" aria-labelledby={id}>
+        {project.stack.map((item) => (
+          <li>
+            <TechChip name={item.name} status={item.status} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}

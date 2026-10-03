@@ -1,0 +1,305 @@
+---
+/**
+ * Chapter 02, the database design project (presentation: 'schema').
+ *
+ * The entity relationship diagram is the hero: SchemaDiagram's full variant
+ * across the whole column (its wide layout from ~58rem, a tall layout or a
+ * list below that). The title sits above it with the numeral opposite; the
+ * normalization path runs as a strip underneath, beside the concepts, stack
+ * and actions.
+ *
+ * Hover (visual only): connectors start flowing and the entities pick up the
+ * accent one after another. SchemaDiagram's own per-entity tracing still
+ * works and takes over while an entity is active.
+ */
+import Icon from '@/components/ui/Icon.astro';
+import NormalizationSteps from '@/components/visuals/NormalizationSteps.astro';
+import SchemaDiagram from '@/components/visuals/SchemaDiagram.astro';
+import type { Project } from '@/data/projects';
+import Chapter from './Chapter.astro';
+import ChapterHead from './ChapterHead.astro';
+import ProjectActions from './ProjectActions.astro';
+import ProjectStack from './ProjectStack.astro';
+import { cardHeadingId } from './util';
+
+interface Props {
+  project: Project;
+  total: number;
+}
+
+const { project, total } = Astro.props;
+const headingId = cardHeadingId(project);
+const conceptsId = `${project.slug}-concepts`;
+
+/* Normal forms are drawn as steps, and stack entries are listed as chips. */
+const concepts = project.concepts
+  .filter((c) => !/^(U|\d)NF$|normali[sz]ation/i.test(c))
+  .filter((c) => !project.stack.some((tech) => tech.name.toLowerCase() === c.toLowerCase()));
+
+const normalized = project.concepts.some((c) => /^\dNF$|normali[sz]ation/i.test(c));
+---
+
+<Chapter project={project} total={total} numberSide="right" class="sc">
+  <div class="sc-grid">
+    <div class="sc-intro">
+      <ChapterHead project={project} headingId={headingId} />
+      <p class="ch-summary sc-summary" data-reveal style="--d: 3">{project.summary}</p>
+    </div>
+
+    {
+      project.schema && (
+        <div class="sc-erd" data-reveal style="--d: 1">
+          <SchemaDiagram schema={project.schema} variant="full" />
+          <p class="sc-erd-note">Simplified entity overview · key columns only</p>
+        </div>
+      )
+    }
+
+    {
+      normalized && (
+        <div class="sc-nf" data-reveal style="--d: 1">
+          <p class="ch-label" aria-hidden="true">
+            Normalization · UNF → 3NF
+          </p>
+          <div class="sc-nf-compact">
+            <NormalizationSteps compact />
+          </div>
+          <div class="sc-nf-full">
+            <NormalizationSteps />
+          </div>
+        </div>
+      )
+    }
+
+    <div class="sc-side" data-reveal style="--d: 2">
+      {
+        concepts.length > 0 && (
+          <div class="sc-concepts">
+            <p id={conceptsId} class="ch-label">
+              Concepts
+            </p>
+            <ul class="sc-concept-list" aria-labelledby={conceptsId}>
+              {concepts.map((concept) => (
+                <li>{concept}</li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+
+      {
+        project.statusNote && (
+          <p class="ch-note">
+            <Icon name="circle-dot" size={14} />
+            <span>{project.statusNote}</span>
+          </p>
+        )
+      }
+
+      <div class="ch-foot">
+        <ProjectStack project={project} />
+        <!-- No code exists for this design project yet: show a repository only once one is linked. -->
+        <ProjectActions project={project} github={Boolean(project.links.github)} />
+      </div>
+    </div>
+  </div>
+</Chapter>
+
+<style>
+  /* ---------------------------------------------------------------- */
+  /* Layout                                                            */
+  /* ---------------------------------------------------------------- */
+
+  .sc-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'intro' 'erd' 'nf' 'side';
+    row-gap: 2.5rem;
+  }
+
+  .sc-intro {
+    grid-area: intro;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+  }
+
+  .sc-erd {
+    grid-area: erd;
+    min-width: 0;
+  }
+
+  .sc-nf {
+    grid-area: nf;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .sc-side {
+    grid-area: side;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    min-width: 0;
+  }
+
+  @media (min-width: 64rem) {
+    .sc-grid {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      grid-template-areas:
+        'intro .'
+        'erd erd'
+        'nf side';
+      column-gap: 4rem;
+      row-gap: 2.5rem;
+    }
+
+    .sc-intro {
+      padding-top: 0.5rem;
+    }
+
+    .sc-nf {
+      padding-top: 0.25rem;
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* ERD                                                               */
+  /* ---------------------------------------------------------------- */
+
+  /* The home page has no slot for the "added below" note; a short one replaces it. */
+  .sc-erd :global(.erd--full > .caption) {
+    display: none;
+  }
+
+  .sc-erd-note {
+    margin-top: 0.875rem;
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.02em;
+  }
+
+  .sc-erd :global(.frame) {
+    transition:
+      border-color 400ms var(--ease-out-quart),
+      box-shadow 700ms var(--ease-out-expo);
+  }
+
+  @media (hover: hover) {
+    .sc-erd:hover :global(.frame) {
+      border-color: var(--accent-line);
+      box-shadow: 0 30px 90px -50px var(--accent-glow);
+    }
+
+    /* Relationships flow while the sheet is hovered and no entity is traced. */
+    .sc-erd:hover :global(.erd-svg:not([data-active]) .link-flow) {
+      opacity: 0.7;
+      animation: dash-flow 1.6s linear infinite;
+    }
+
+    .sc-erd:hover :global(.erd-svg:not([data-active]) .link-line) {
+      opacity: 0.45;
+    }
+
+    /* Entities light up one after another (--i is set per entity by the diagram). */
+    .sc-erd:hover :global(.erd-svg:not([data-active]) .entity-edge) {
+      stroke: var(--accent-line);
+      transition-delay: calc(var(--i, 0) * 70ms);
+    }
+
+    .sc-erd:hover :global(.erd-svg:not([data-active]) .entity-icon) {
+      stroke: var(--accent-text);
+      transition-delay: calc(var(--i, 0) * 70ms);
+    }
+  }
+
+  @media (hover: hover) and (prefers-reduced-motion: reduce) {
+    .sc-erd:hover :global(.erd-svg:not([data-active]) .link-flow) {
+      animation: none;
+      opacity: 0;
+    }
+
+    .sc-erd:hover :global(.erd-svg:not([data-active]) .link-line) {
+      opacity: 1;
+    }
+  }
+
+  /* Entrance: the drawing sheet unrolls from the left. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) .sc-erd[data-reveal] {
+      clip-path: inset(-3rem 100% -3rem -3rem);
+      transform: none;
+      filter: none;
+      transition:
+        opacity 900ms var(--ease-out-expo),
+        clip-path 1400ms var(--ease-out-expo);
+    }
+
+    :global(html.js) .sc-erd[data-reveal]:global(.is-visible) {
+      clip-path: inset(-3rem);
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Normalization strip                                               */
+  /* ---------------------------------------------------------------- */
+
+  /* Phones get the chip row; from md the steps carry their definitions. */
+  .sc-nf-compact {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .sc-nf-full {
+    display: none;
+  }
+
+  @media (min-width: 48rem) {
+    .sc-nf-compact {
+      display: none;
+    }
+
+    .sc-nf-full {
+      display: block;
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Concepts: an inline run of terms, not boxes                       */
+  /* ---------------------------------------------------------------- */
+
+  .sc-concepts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  .sc-concept-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.5rem;
+  }
+
+  .sc-concept-list > li {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Pixel separators: drawn, not generated text, so screen readers skip them. */
+  .sc-concept-list > li:not(:last-child)::after {
+    content: '';
+    width: 0.25rem;
+    height: 0.25rem;
+    margin-inline: 0.75rem;
+    background: var(--fg-faint);
+  }
+</style>

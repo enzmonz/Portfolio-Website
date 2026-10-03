@@ -1,0 +1,37 @@
+---
+/**
+ * Section heading block: mono index eyebrow, large title, optional lede.
+ * Pass `id` to label the parent section via aria-labelledby.
+ */
+import { cn } from '@/lib/cn';
+
+interface Props {
+  index: string;
+  eyebrow: string;
+  title: string;
+  id: string;
+  lede?: string;
+  align?: 'left' | 'center';
+  class?: string;
+}
+
+const { index, eyebrow, title, id, lede, align = 'left', class: className } = Astro.props;
+---
+
+<header class={cn('flex flex-col gap-5', align === 'center' && 'items-center text-center', className)}>
+  <p class="eyebrow" data-reveal>
+    <span class="eyebrow-index">{index}</span>
+    <span>{eyebrow}</span>
+  </p>
+  <h2 id={id} class="text-h2 max-w-[18ch] text-fg" data-reveal style="--d: 1">
+    <Fragment set:html={title} />
+  </h2>
+  {
+    lede && (
+      <p class="text-lede max-w-[60ch] text-fg-muted" data-reveal style="--d: 2">
+        {lede}
+      </p>
+    )
+  }
+  <slot />
+</header>

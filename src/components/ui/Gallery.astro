@@ -1,0 +1,866 @@
+---
+/**
+ * Screenshot viewer for project detail pages.
+ *
+ * - Dark/light pairs (same caption, different `theme`) are one slide; the site
+ *   theme decides which image shows.
+ * - Desktop shots sit in a BrowserFrame, mobile shots in a PhoneFrame, both on
+ *   a fixed-ratio grid stage, so switching slides never shifts the layout.
+ * - Thumbnails follow the WAI-ARIA tabs pattern (arrow keys, Home/End).
+ * - "View full size" opens a native <dialog> lightbox (Esc, close button or
+ *   a click outside the image closes it; ←/→ step through slides).
+ * - Without JS every slide renders stacked with its caption.
+ */
+import BrowserFrame from './BrowserFrame.astro';
+import PhoneFrame from './PhoneFrame.astro';
+import ProjectShot from './ProjectShot.astro';
+import Icon from './Icon.astro';
+import type { ProjectImage } from '@/data/projects';
+import { projectImage } from '@/lib/images';
+import { cn } from '@/lib/cn';
+
+interface Props {
+  images: ProjectImage[];
+  /** Accessible name for the thumbnail list, e.g. "CinnabyteHQ screenshots". */
+  label: string;
+  /** Prefix for element ids; defaults to a slug of `label`. Set it when two galleries share a label. */
+  idPrefix?: string;
+  class?: string;
+}
+
+const { images, label, idPrefix, class: className } = Astro.props;
+
+interface Slide {
+  caption: string;
+  kind: ProjectImage['kind'];
+  images: ProjectImage[];
+  /** Width / height of the source image. */
+  ratio: number;
+}
+
+const slides: Slide[] = [];
+for (const image of images) {
+  const caption = image.caption ?? `Screenshot ${slides.length + 1}`;
+  if (image.theme) {
+    const pair = slides.find(
+      (s) =>
+        s.caption === caption &&
+        s.kind === image.kind &&
+        s.images.every((other) => other.theme !== undefined && other.theme !== image.theme),
+    );
+    if (pair) {
+      pair.images.push(image);
+      continue;
+    }
+  }
+  const meta = projectImage(image.src);
+  slides.push({ caption, kind: image.kind, images: [image], ratio: meta.width / meta.height });
+}
+
+const count = slides.length;
+const hasDesktop = slides.some((s) => s.kind === 'desktop');
+const hasMobile = slides.some((s) => s.kind === 'mobile');
+const mix = hasDesktop && hasMobile ? 'mixed' : hasMobile ? 'mobile' : 'desktop';
+
+const prefix =
+  idPrefix ??
+  (label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'gallery');
+
+/* The first slide loads eagerly, unless it is a theme pair (then the hidden
+   variant would be fetched for nothing; lazy skips display:none images). */
+const loadingFor = (i: number): 'eager' | 'lazy' => (i === 0 && slides[0].images.length === 1 ? 'eager' : 'lazy');
+
+const pad = (i: number) => String(i).padStart(2, '0');
+const counter = (i: number) => `${pad(i + 1)} / ${pad(count)}`;
+
+const DESKTOP_SIZES = '(min-width: 76rem) 68rem, calc(100vw - 4rem)';
+const MOBILE_SIZES = '(min-width: 64rem) 22rem, (min-width: 40rem) 16rem, 45vw';
+---
+
+{
+  count > 0 && (
+    <div
+      class={cn('gallery', className)}
+      data-gallery
+      data-mix={mix}
+      data-count={count}
+    >
+      <div class="g-stage ticks">
+        <span class="tick tick-tl" aria-hidden="true" />
+        <span class="tick tick-tr" aria-hidden="true" />
+        <span class="tick tick-bl" aria-hidden="true" />
+        <span class="tick tick-br" aria-hidden="true" />
+
+        {slides.map((slide, i) => (
+          <figure
+            class="g-slide"
+            id={`${prefix}-panel-${i}`}
+            data-slide={i}
+            data-kind={slide.kind}
+            data-caption={slide.caption}
+            data-active={i === 0 ? '' : undefined}
+            aria-labelledby={`${prefix}-cap-${i}`}
+            style={`--ratio:${slide.ratio.toFixed(4)}`}
+          >
+            <div class="g-canvas">
+              <div class="g-media">
+                {slide.kind === 'desktop' ? (
+                  <BrowserFrame title={slide.caption} class="g-frame">
+                    {slide.images.map((image) => (
+                      <ProjectShot image={image} loading={loadingFor(i)} sizes={DESKTOP_SIZES} />
+                    ))}
+                  </BrowserFrame>
+                ) : (
+                  <PhoneFrame class="g-phone">
+                    {slide.images.map((image) => (
+                      <ProjectShot image={image} loading={loadingFor(i)} sizes={MOBILE_SIZES} />
+                    ))}
+                  </PhoneFrame>
+                )}
+              </div>
+            </div>
+            <figcaption class="g-cap" id={`${prefix}-cap-${i}`}>
+              <span class="g-cap-index" aria-hidden="true">
+                {counter(i)}
+              </span>
+              <span>{slide.caption}</span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+
+      <div class="g-controls">
+        <p class="g-status">
+          <span class="g-count" data-g-count>
+            {counter(0)}
+          </span>
+          <span class="g-caption" data-g-caption>
+            {slides[0].caption}
+          </span>
+        </p>
+        <div class="g-actions">
+          <button type="button" class="btn btn-secondary btn-sm g-full" data-g-open aria-haspopup="dialog">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="M15 3h6v6" />
+              <path d="m21 3-7 7" />
+              <path d="M9 21H3v-6" />
+              <path d="m3 21 7-7" />
+            </svg>
+            <span>View full size</span>
+          </button>
+          {count > 1 && (
+            <>
+              <button type="button" class="g-icon-btn" data-g-prev aria-label="Previous screenshot">
+                <Icon name="arrow-left" size={16} />
+              </button>
+              <button type="button" class="g-icon-btn" data-g-next aria-label="Next screenshot">
+                <Icon name="arrow-right" size={16} />
+              </button>
+            </>
+          )}
+        </div>
+        <span class="sr-only" aria-live="polite" data-g-live />
+      </div>
+
+      {count > 1 && (
+        <div class="g-thumbs" role="tablist" aria-label={label}>
+          {slides.map((slide, i) => (
+            <button
+              type="button"
+              role="tab"
+              class="g-thumb"
+              id={`${prefix}-tab-${i}`}
+              data-g-tab={i}
+              data-kind={slide.kind}
+              aria-controls={`${prefix}-panel-${i}`}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              aria-label={`Show ${slide.caption}`}
+              tabindex={i === 0 ? 0 : -1}
+            >
+              <span class="g-thumb-media">
+                {slide.images.map((image) => (
+                  <ProjectShot image={image} widths={[240]} sizes="7.5rem" loading="lazy" />
+                ))}
+              </span>
+              <span class="g-thumb-index" aria-hidden="true">
+                {pad(i + 1)}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <dialog class="g-dialog" data-g-dialog aria-labelledby={`${prefix}-dialog-title`}>
+        <div class="g-dialog-inner" data-g-dismiss>
+          <div class="g-dialog-bar">
+            <p class="g-dialog-title" id={`${prefix}-dialog-title`}>
+              <span class="g-count" data-g-dialog-count>
+                {counter(0)}
+              </span>
+              <span class="g-caption" data-g-dialog-caption>
+                {slides[0].caption}
+              </span>
+            </p>
+            <div class="g-actions">
+              {count > 1 && (
+                <>
+                  <button type="button" class="g-icon-btn" data-g-prev aria-label="Previous screenshot">
+                    <Icon name="arrow-left" size={16} />
+                  </button>
+                  <button type="button" class="g-icon-btn" data-g-next aria-label="Next screenshot">
+                    <Icon name="arrow-right" size={16} />
+                  </button>
+                </>
+              )}
+              <button type="button" class="g-icon-btn" data-g-close aria-label="Close full-size view">
+                <Icon name="x" size={16} />
+              </button>
+            </div>
+          </div>
+          <div class="g-dialog-media" data-g-dialog-media data-g-dismiss />
+        </div>
+      </dialog>
+    </div>
+  )
+}
+
+<script>
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const pad = (i: number) => String(i).padStart(2, '0');
+
+  function initGallery(root: HTMLElement) {
+    const slides = Array.from(root.querySelectorAll<HTMLElement>('[data-slide]'));
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-g-tab]'));
+    const strip = root.querySelector<HTMLElement>('[role="tablist"]');
+    const countEl = root.querySelector<HTMLElement>('[data-g-count]');
+    const captionEl = root.querySelector<HTMLElement>('[data-g-caption]');
+    const live = root.querySelector<HTMLElement>('[data-g-live]');
+    const dialog = root.querySelector<HTMLDialogElement>('[data-g-dialog]');
+    const dialogMedia = root.querySelector<HTMLElement>('[data-g-dialog-media]');
+    const dialogCount = root.querySelector<HTMLElement>('[data-g-dialog-count]');
+    const dialogCaption = root.querySelector<HTMLElement>('[data-g-dialog-caption]');
+    const total = slides.length;
+    if (!total) return;
+
+    let current = 0;
+    const counter = (i: number) => `${pad(i + 1)} / ${pad(total)}`;
+
+    // Panels only become tabpanels once the tabs work.
+    if (tabs.length) {
+      slides.forEach((slide) => {
+        slide.setAttribute('role', 'tabpanel');
+        slide.tabIndex = 0;
+      });
+    }
+
+    /** Start loading a slide's (visible-theme) images ahead of time. */
+    const preload = (i: number) => {
+      const slide = slides[(i + total) % total];
+      slide?.querySelectorAll<HTMLImageElement>('img[loading="lazy"]').forEach((img) => {
+        // Skip the theme variant that is display:none.
+        if (img.getClientRects().length) img.loading = 'eager';
+      });
+    };
+
+    const centerThumb = (i: number) => {
+      const tab = tabs[i];
+      if (!strip || !tab || strip.scrollWidth <= strip.clientWidth) return;
+      const left = tab.offsetLeft - (strip.clientWidth - tab.offsetWidth) / 2;
+      strip.scrollTo({ left, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+    };
+
+    const renderDialog = () => {
+      if (!dialog?.open || !dialogMedia) return;
+      const slide = slides[current];
+      const mobile = slide.dataset.kind === 'mobile';
+      const pictures = Array.from(slide.querySelectorAll('picture')).map((picture) => {
+        const clone = picture.cloneNode(true) as HTMLElement;
+        const sizes = mobile ? '(min-width: 48rem) 28rem, 90vw' : '100vw';
+        clone.querySelectorAll('source').forEach((source) => (source.sizes = sizes));
+        clone.querySelectorAll('img').forEach((img) => {
+          img.sizes = sizes;
+          img.loading = 'eager';
+          img.removeAttribute('fetchpriority');
+        });
+        return clone;
+      });
+      dialogMedia.style.setProperty('--ratio', slide.style.getPropertyValue('--ratio'));
+      dialogMedia.dataset.kind = slide.dataset.kind ?? 'desktop';
+      dialogMedia.replaceChildren(...pictures);
+      if (dialogCount) dialogCount.textContent = counter(current);
+      if (dialogCaption) dialogCaption.textContent = slide.dataset.caption ?? '';
+    };
+
+    const show = (index: number, options: { focusTab?: boolean; announce?: boolean } = {}) => {
+      const next = (index + total) % total;
+      current = next;
+      slides.forEach((slide, i) => {
+        if (i === next) slide.setAttribute('data-active', '');
+        else slide.removeAttribute('data-active');
+      });
+      tabs.forEach((tab, i) => {
+        const selected = i === next;
+        tab.setAttribute('aria-selected', String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+      });
+      const caption = slides[next].dataset.caption ?? '';
+      if (countEl) countEl.textContent = counter(next);
+      if (captionEl) captionEl.textContent = caption;
+      if (options.announce && live) live.textContent = `${caption}, ${next + 1} of ${total}`;
+      if (options.focusTab) tabs[next]?.focus();
+      centerThumb(next);
+      preload(next + 1);
+      renderDialog();
+    };
+
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => show(i));
+      tab.addEventListener('pointerenter', () => preload(i), { passive: true });
+      tab.addEventListener('focus', () => preload(i));
+      tab.addEventListener('keydown', (event) => {
+        const keys: Record<string, number> = {
+          ArrowRight: current + 1,
+          ArrowDown: current + 1,
+          ArrowLeft: current - 1,
+          ArrowUp: current - 1,
+          Home: 0,
+          End: total - 1,
+        };
+        if (!(event.key in keys)) return;
+        event.preventDefault();
+        show(keys[event.key], { focusTab: true });
+      });
+    });
+
+    root.querySelectorAll<HTMLButtonElement>('[data-g-prev]').forEach((button) =>
+      button.addEventListener('click', () => show(current - 1, { announce: true })),
+    );
+    root.querySelectorAll<HTMLButtonElement>('[data-g-next]').forEach((button) =>
+      button.addEventListener('click', () => show(current + 1, { announce: true })),
+    );
+
+    // Lightbox
+    const openButton = root.querySelector<HTMLButtonElement>('[data-g-open]');
+    if (!dialog || typeof dialog.showModal !== 'function') {
+      openButton?.remove();
+      return;
+    }
+
+    openButton?.addEventListener('click', () => {
+      dialog.showModal();
+      document.documentElement.style.overflow = 'hidden';
+      renderDialog();
+    });
+
+    dialog.addEventListener('close', () => {
+      document.documentElement.style.overflow = '';
+      dialogMedia?.replaceChildren();
+    });
+
+    dialog.querySelector('[data-g-close]')?.addEventListener('click', () => dialog.close());
+
+    // A click on the dim area (not the image or the bar) closes the lightbox.
+    dialog.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      if (target === dialog || target.hasAttribute('data-g-dismiss')) dialog.close();
+    });
+
+    dialog.addEventListener('keydown', (event) => {
+      if (total < 2) return;
+      if (event.key === 'ArrowRight') show(current + 1, { announce: true });
+      else if (event.key === 'ArrowLeft') show(current - 1, { announce: true });
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-gallery]').forEach(initGallery);
+</script>
+
+<style>
+  .gallery {
+    --pad: 0.75rem;
+    --stage-ratio: 16 / 11;
+    min-width: 0;
+  }
+
+  .gallery[data-mix='mixed'],
+  .gallery[data-mix='mobile'] {
+    --stage-ratio: 5 / 6;
+  }
+
+  @media (min-width: 40rem) {
+    .gallery {
+      --pad: 1.5rem;
+    }
+
+    .gallery[data-mix='mixed'],
+    .gallery[data-mix='mobile'] {
+      --stage-ratio: 16 / 11;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .gallery {
+      --pad: 2rem;
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Stage                                                             */
+  /* ---------------------------------------------------------------- */
+
+  /* Without JS: every slide stacked, each on its own canvas. */
+  .g-stage {
+    display: grid;
+    gap: 2.5rem;
+  }
+
+  .g-stage > .tick {
+    display: none;
+  }
+
+  /* Stacked (no-JS) slides can each use the ratio that suits them. */
+  :global(html:not(.js)) .g-slide[data-kind='desktop'] {
+    --stage-ratio: 16 / 11;
+  }
+
+  .g-slide {
+    min-width: 0;
+    margin: 0;
+  }
+
+  .g-canvas {
+    position: relative;
+    container-type: size;
+    aspect-ratio: var(--stage-ratio);
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    background: var(--bg-elevated);
+  }
+
+  .g-canvas::before,
+  :global(html.js) .g-stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: -1px -1px;
+    mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 25%, transparent 100%);
+    pointer-events: none;
+  }
+
+  .g-media {
+    position: absolute;
+    inset: var(--pad);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Desktop: as wide as possible while the whole window fits the stage height. */
+  .g-media > :global(.g-frame) {
+    width: min(100%, calc((100cqh - 2 * var(--pad) - var(--bar-h, 2.25rem) - 2px) * var(--ratio)));
+    flex: none;
+  }
+
+  /* Mobile: phone height fills the stage; width follows the screen ratio. */
+  .g-media > :global(.g-phone) {
+    --screen-ratio: var(--ratio);
+    width: min(
+      100%,
+      calc((100cqh - 2 * var(--pad) - 2 * var(--phone-bezel, 7px)) * var(--ratio) + 2 * var(--phone-bezel, 7px))
+    );
+    flex: none;
+  }
+
+  .g-cap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.875rem;
+    margin-top: 0.875rem;
+    color: var(--fg-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .g-cap-index {
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* With JS: one shared stage; slides cross-fade in place. */
+  :global(html.js) .g-stage {
+    position: relative;
+    isolation: isolate;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 1.25rem;
+    background: var(--bg-elevated);
+  }
+
+  :global(html.js) .g-stage::before {
+    z-index: -1;
+  }
+
+  :global(html.js) .g-stage > .tick {
+    display: block;
+  }
+
+  :global(html.js) .g-slide {
+    grid-area: 1 / 1;
+    visibility: hidden;
+    opacity: 0;
+    transition:
+      opacity 450ms var(--ease-out-quart),
+      visibility 0s linear 450ms;
+  }
+
+  :global(html.js) .g-slide[data-active] {
+    visibility: visible;
+    opacity: 1;
+    transition:
+      opacity 450ms var(--ease-out-quart),
+      visibility 0s;
+  }
+
+  :global(html.js) .g-slide .g-media {
+    transform: scale(0.985);
+    transition: transform 700ms var(--ease-out-expo);
+  }
+
+  :global(html.js) .g-slide[data-active] .g-media {
+    transform: none;
+  }
+
+  :global(html.js) .g-canvas {
+    border: 0;
+    background: transparent;
+  }
+
+  :global(html.js) .g-canvas::before {
+    content: none;
+  }
+
+  :global(html.js) .g-slide:focus-visible {
+    outline-offset: -2px;
+    border-radius: 1.25rem;
+  }
+
+  :global(html.js) .g-cap {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Controls (JS only)                                                */
+  /* ---------------------------------------------------------------- */
+
+  .g-controls,
+  .g-thumbs {
+    display: none;
+  }
+
+  :global(html.js) .g-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    margin-top: 1.25rem;
+  }
+
+  :global(html.js) .g-thumbs {
+    display: flex;
+  }
+
+  .g-status,
+  .g-dialog-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.875rem;
+    min-width: 0;
+  }
+
+  .g-count {
+    flex: none;
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .g-caption {
+    min-width: 0;
+    color: var(--fg);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .g-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .g-full {
+    height: 2.5rem;
+  }
+
+  .g-icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 0.625rem;
+    background: var(--surface-2);
+    color: var(--fg-muted);
+    transition:
+      color 200ms var(--ease-out-quart),
+      background-color 200ms var(--ease-out-quart),
+      border-color 200ms var(--ease-out-quart);
+  }
+
+  .g-icon-btn:hover {
+    border-color: var(--border-hover);
+    background: var(--surface-3);
+    color: var(--fg);
+  }
+
+  .g-icon-btn:active {
+    transform: translateY(1px);
+  }
+
+  /* Thumbnails */
+  .g-thumbs {
+    position: relative;
+    gap: 0.625rem;
+    margin: 0.875rem -6px 0;
+    padding: 6px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+
+  .g-thumb {
+    position: relative;
+    flex: none;
+    width: clamp(5.5rem, 17vw, 7.5rem);
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    padding: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: 0.625rem;
+    background: var(--surface-2);
+    scroll-snap-align: center;
+    transition:
+      border-color 250ms var(--ease-out-quart),
+      box-shadow 250ms var(--ease-out-quart);
+  }
+
+  .g-thumb-media {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    opacity: 0.5;
+    transition: opacity 250ms var(--ease-out-quart);
+  }
+
+  .g-thumb:hover .g-thumb-media {
+    opacity: 0.85;
+  }
+
+  .g-thumb[aria-selected='true'] {
+    border-color: var(--accent-line);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .g-thumb[aria-selected='true'] .g-thumb-media {
+    opacity: 1;
+  }
+
+  .g-thumb-media :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+
+  /* Phone shots: a small portrait card on the grid instead of a crop. */
+  .g-thumb[data-kind='mobile'] {
+    background:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px) -1px -1px / 10px 10px,
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px) -1px -1px / 10px 10px,
+      var(--surface-2);
+  }
+
+  .g-thumb[data-kind='mobile'] .g-thumb-media :global(img) {
+    width: auto;
+    height: 84%;
+    border-radius: 0.25rem;
+    box-shadow: 0 0 0 1px var(--border-strong);
+  }
+
+  .g-thumb-index {
+    position: absolute;
+    left: 0.375rem;
+    bottom: 0.3125rem;
+    padding: 0.0625rem 0.3125rem;
+    border-radius: 0.25rem;
+    background: color-mix(in oklab, var(--bg) 78%, transparent);
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    line-height: 1.4;
+    letter-spacing: 0.04em;
+    opacity: 0;
+    transition: opacity 250ms var(--ease-out-quart);
+  }
+
+  .g-thumb:hover .g-thumb-index,
+  .g-thumb:focus-visible .g-thumb-index,
+  .g-thumb[aria-selected='true'] .g-thumb-index {
+    opacity: 1;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Lightbox                                                          */
+  /* ---------------------------------------------------------------- */
+
+  .g-dialog {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    color: var(--fg);
+    /* The dialog covers the viewport, so it paints its own scrim (inherits theme tokens). */
+    background: color-mix(in oklab, var(--bg) 90%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .g-dialog::backdrop {
+    background: transparent;
+  }
+
+  .g-dialog[open] {
+    display: flex;
+    animation: fade-in 260ms var(--ease-out-quart);
+  }
+
+  .g-dialog-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    height: 100%;
+    padding: 0.75rem;
+  }
+
+  .g-dialog-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    max-width: 90rem;
+    width: 100%;
+    margin-inline: auto;
+  }
+
+  .g-dialog-media {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+  }
+
+  .g-dialog-media :global(img) {
+    width: min(100%, calc((100dvh - 7rem) * var(--ratio, 1.6)));
+    max-width: 90rem;
+    height: auto;
+    border: 1px solid var(--border-strong);
+    border-radius: 0.875rem;
+    background: var(--surface-2);
+    box-shadow: var(--shadow-float);
+  }
+
+  .g-dialog-media[data-kind='mobile'] :global(img) {
+    border-radius: 1.5rem;
+  }
+
+  .g-dialog[open] .g-dialog-media {
+    animation: gallery-zoom 500ms var(--ease-out-expo);
+  }
+
+  @keyframes gallery-zoom {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+  }
+
+  @media (min-width: 40rem) {
+    .g-dialog-inner {
+      gap: 1rem;
+      padding: 1.25rem 1.5rem 1.5rem;
+    }
+  }
+
+  @media (width < 40rem) {
+    .g-full span {
+      /* Icon-only on phones; the accessible name stays. */
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .g-full {
+      width: 2.5rem;
+      padding: 0;
+    }
+
+    .g-caption {
+      font-size: 0.875rem;
+    }
+  }
+</style>

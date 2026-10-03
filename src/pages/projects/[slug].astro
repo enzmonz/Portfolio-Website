@@ -1,0 +1,243 @@
+---
+/**
+ * Project detail page — one per entry in `src/data/projects.ts`.
+ * Everything rendered here comes from the project data.
+ */
+import type { GetStaticPaths } from 'astro';
+import Layout from '@/layouts/Layout.astro';
+import DetailSection from '@/components/project-detail/DetailSection.astro';
+import NotesGrid from '@/components/project-detail/NotesGrid.astro';
+import ProblemSolution from '@/components/project-detail/ProblemSolution.astro';
+import ProjectAside from '@/components/project-detail/ProjectAside.astro';
+import ProjectHero from '@/components/project-detail/ProjectHero.astro';
+import ProjectPager from '@/components/project-detail/ProjectPager.astro';
+import ProjectPreview from '@/components/project-detail/ProjectPreview.astro';
+import ScopeList from '@/components/project-detail/ScopeList.astro';
+import TechList from '@/components/project-detail/TechList.astro';
+import ArchitectureDiagram from '@/components/visuals/ArchitectureDiagram.astro';
+import FlowRail from '@/components/visuals/FlowRail.astro';
+import NormalizationSteps from '@/components/visuals/NormalizationSteps.astro';
+import { projects, type Project } from '@/data/projects';
+
+export const getStaticPaths = (() =>
+  projects.map((project) => ({
+    params: { slug: project.slug },
+    props: { project },
+  }))) satisfies GetStaticPaths;
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+
+const schema = project.presentation === 'schema' ? project.schema : undefined;
+
+/* On the database project, highlights that define a normal form repeat what
+   NormalizationSteps already shows, so only the others (e.g. keys) are kept
+   and they move into the Normalization section. */
+const RESTATES_NORMAL_FORM = /\bnormal form\b|\b[1-3]NF\b/i;
+const notes = schema ? project.highlights.filter((h) => !RESTATES_NORMAL_FORM.test(h.title)) : project.highlights;
+
+// No code exists yet for design-stage projects, so nothing is tagged "Implemented".
+const designOnly = project.status === 'Design Project' || project.status === 'Concept';
+
+const flowLabel = project.slug === 'mobile-booking' ? 'Booking flow' : 'Commerce flow';
+
+type SectionKey = 'overview' | 'stack' | 'architecture' | 'normalization' | 'notes' | 'concepts' | 'scope';
+interface SectionMeta {
+  index: string;
+  title: string;
+  id: string;
+}
+
+const plan: [SectionKey, string, boolean][] = [
+  ['overview', 'Problem & solution', true],
+  ['stack', 'Technologies', project.stack.length > 0],
+  ['architecture', 'Architecture', project.architecture.nodes.length > 0],
+  ['normalization', 'Normalization', Boolean(schema)],
+  ['notes', 'Engineering notes', !schema && notes.length > 0],
+  ['concepts', 'Key technical concepts', project.concepts.length > 0],
+  ['scope', 'Scope', Boolean(project.scope && (project.scope.implemented.length || project.scope.planned.length))],
+];
+
+const sections: Partial<Record<SectionKey, SectionMeta>> = {};
+plan
+  .filter(([, , on]) => on)
+  .forEach(([key, title], i) => {
+    sections[key] = { index: String(i + 1).padStart(2, '0'), title, id: `${key}-title` };
+  });
+---
+
+<Layout title={`${project.title} — Enzo Monzon`} description={project.summary} type="article" page="project">
+  <article class="pd" data-project={project.slug}>
+    <ProjectHero project={project} total={projects.length} />
+    <ProjectPreview project={project} />
+
+    <div class="container-page">
+      <div class="pd-body">
+        <div class="pd-main">
+          {
+            sections.overview && (
+              <DetailSection {...sections.overview}>
+                <ProblemSolution problem={project.problem} solution={project.solution} />
+              </DetailSection>
+            )
+          }
+
+          {
+            sections.stack && (
+              <DetailSection {...sections.stack}>
+                <TechList stack={project.stack} design={designOnly} />
+              </DetailSection>
+            )
+          }
+
+          {
+            sections.architecture && (
+              <DetailSection {...sections.architecture}>
+                <ArchitectureDiagram
+                  nodes={project.architecture.nodes}
+                  title={project.architecture.title}
+                  caption={project.architecture.caption}
+                  orientation="auto"
+                  size="md"
+                  conceptual={designOnly}
+                  label={`${project.shortTitle}: ${project.architecture.title}`}
+                />
+                {project.flow && project.flow.length > 0 && (
+                  <div class="pd-sub" data-reveal>
+                    <h3 class="pd-sub-title">
+                      <span class="pd-sub-mark" aria-hidden="true" />
+                      {flowLabel}
+                    </h3>
+                    <FlowRail steps={project.flow} label={flowLabel} />
+                  </div>
+                )}
+              </DetailSection>
+            )
+          }
+
+          {
+            sections.normalization && (
+              <DetailSection {...sections.normalization}>
+                <NormalizationSteps />
+                {notes.length > 0 && <NotesGrid notes={notes} class="mt-12" />}
+              </DetailSection>
+            )
+          }
+
+          {
+            sections.notes && (
+              <DetailSection {...sections.notes}>
+                <NotesGrid notes={notes} />
+              </DetailSection>
+            )
+          }
+
+          {
+            sections.concepts && (
+              <DetailSection {...sections.concepts}>
+                <ul class="pd-concepts" data-reveal>
+                  {project.concepts.map((concept) => (
+                    <li class="chip pd-concept">{concept}</li>
+                  ))}
+                </ul>
+              </DetailSection>
+            )
+          }
+
+          {
+            sections.scope && project.scope && (
+              <DetailSection {...sections.scope}>
+                <ScopeList scope={project.scope} />
+              </DetailSection>
+            )
+          }
+        </div>
+
+        <ProjectAside project={project} class="pd-aside" />
+      </div>
+    </div>
+  </article>
+
+  <ProjectPager project={project} />
+</Layout>
+
+<style>
+  .pd-body {
+    display: grid;
+    row-gap: 3.5rem;
+    padding-bottom: 5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .pd-main {
+    min-width: 0;
+  }
+
+  .pd-sub {
+    margin-top: 3rem;
+  }
+
+  .pd-sub-title {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin-bottom: 1.25rem;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .pd-sub-mark {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 999px;
+    background: var(--accent);
+  }
+
+  .pd-concepts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .pd-concept {
+    height: 2rem;
+    padding-inline: 0.75rem;
+    color: var(--fg-muted);
+    font-size: 0.75rem;
+  }
+
+  .pd-concept:hover {
+    border-color: var(--border-strong);
+    color: var(--fg);
+  }
+
+  @media (min-width: 48rem) {
+    .pd-body {
+      padding-bottom: 6rem;
+    }
+  }
+
+  /* The aside keeps a fixed spec-sheet width so the main column gets the room
+     a four-layer architecture diagram needs to lay out in a row at xl. */
+  @media (min-width: 64rem) {
+    .pd-body {
+      grid-template-columns: minmax(0, 1fr) 19rem;
+      column-gap: 3rem;
+    }
+  }
+
+  @media (min-width: 80rem) {
+    .pd-body {
+      grid-template-columns: minmax(0, 1fr) 19.5rem;
+      column-gap: 4rem;
+    }
+  }
+</style>

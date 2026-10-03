@@ -1,0 +1,33 @@
+---
+import Icon from './Icon.astro';
+import { techIcons } from './tech-icons';
+import { techIconFor } from '@/lib/tech';
+
+interface Props {
+  name: string;
+  size?: number;
+  class?: string;
+}
+
+const { name, size = 14, class: className } = Astro.props;
+const { brand, fallback } = techIconFor(name);
+---
+
+{
+  brand ? (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="currentColor"
+      class={className}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d={techIcons[brand]} />
+    </svg>
+  ) : (
+    <Icon name={fallback} size={size} class={className} />
+  )
+}

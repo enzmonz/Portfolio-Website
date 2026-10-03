@@ -1,0 +1,23 @@
+---
+/** "E" with a terminal cursor block — the site's mark. Mirrors public/favicon.svg. */
+interface Props {
+  size?: number;
+  class?: string;
+}
+const { size = 28, class: className } = Astro.props;
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 32 32"
+  width={size}
+  height={size}
+  class={className}
+  aria-hidden="true"
+  focusable="false"
+>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="8.5" fill="var(--surface-2)" stroke="var(--border-strong)"></rect>
+  <path d="M9.5 9h10M9.5 16h8M9.5 23h10M9.5 9v14" stroke="var(--fg)" stroke-width="2.4" stroke-linecap="square" fill="none"
+  ></path>
+  <rect x="21.5" y="19.5" width="4" height="4" rx="0.75" fill="var(--accent)"></rect>
+</svg>

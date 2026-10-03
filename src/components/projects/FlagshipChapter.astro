@@ -1,0 +1,632 @@
+---
+/**
+ * Chapter 01, the flagship (presentation: 'flagship').
+ *
+ * lg+: the story on the left, a dashboard composition on the right that
+ * bleeds toward the viewport edge and stays pinned (sticky) while the text
+ * beside it scrolls. Below lg: title → composition → text.
+ *
+ * Composition: the overview screen (a dark/light pair that follows the site
+ * theme) in front, the request detail behind it, the phone shot over the
+ * lower-left corner. With a fine pointer it tilts toward the cursor (≤ 4deg)
+ * and its layers move at different depths (vars from Projects.astro's
+ * script), the front frame glows, and four implementation chips float in and
+ * take turns highlighting. Touch and narrow screens get the chips as a
+ * static list; reduced motion gets no tilt, parallax or cycling.
+ */
+import BrowserFrame from '@/components/ui/BrowserFrame.astro';
+import Icon from '@/components/ui/Icon.astro';
+import PhoneFrame from '@/components/ui/PhoneFrame.astro';
+import ProjectShot from '@/components/ui/ProjectShot.astro';
+import type { Project } from '@/data/projects';
+import Chapter from './Chapter.astro';
+import ChapterHead from './ChapterHead.astro';
+import ProjectActions from './ProjectActions.astro';
+import ProjectStack from './ProjectStack.astro';
+import StageGrid from './StageGrid.astro';
+import { cardHeadingId, findImage, leadSentences, pickScreens } from './util';
+
+interface Props {
+  project: Project;
+  total: number;
+}
+
+const { project, total } = Astro.props;
+const headingId = cardHeadingId(project);
+
+const { hero, others, phone } = pickScreens(project);
+const back = findImage(project, 'cinnabytehq/request-detail.png') ?? others[0];
+const hasStage = hero.length > 0;
+
+const brief = [
+  { key: 'problem', label: 'Problem', text: leadSentences(project.problem, 1) },
+  { key: 'solution', label: 'Solution', text: leadSentences(project.solution, 2) },
+];
+
+/*
+ * Implementation details for the floating chips. Checked against the
+ * CinnabyteHQ source: src/lib/workflow.ts (new → in_review → in_progress →
+ * completed), src/services/requests.ts (approval required by category),
+ * src/services/activity.ts (activity rows written by the service layer) and
+ * the API's 409 CONFLICT for refused transitions.
+ */
+const workflow = ['new → in_review', 'in_review → in_progress', 'in_progress → completed'];
+const facts = ['Approval routed by category', 'Activity log written server-side', '409 on an invalid transition'];
+
+const SIZES = {
+  front: '(min-width: 80rem) 48rem, (min-width: 64rem) 70vw, (min-width: 40rem) 90vw, 125vw',
+  back: '(min-width: 64rem) 38rem, (min-width: 40rem) 80vw, 1px',
+  phone: '(min-width: 64rem) 8rem, (min-width: 40rem) 16vw, 28vw',
+};
+---
+
+<Chapter project={project} total={total} numberSide="left" class="fs">
+  <div class="fs-grid" data-stage={hasStage ? '' : undefined}>
+    <div class="fs-head">
+      <ChapterHead project={project} headingId={headingId} />
+    </div>
+
+    {
+      hasStage && (
+        <figure class="fs-stage" data-pj-pointer data-fs-stage>
+          <div class="fs-scene" data-reveal style="--d: 1">
+            <StageGrid cell={28} />
+            <div class="fs-tilt">
+              <span class="fs-glow" aria-hidden="true" />
+
+              {back && (
+                <div class="fs-layer fs-back">
+                  <BrowserFrame title={back.caption}>
+                    <ProjectShot image={back} sizes={SIZES.back} />
+                  </BrowserFrame>
+                </div>
+              )}
+
+              <div class="fs-layer fs-front">
+                <BrowserFrame title={hero[0].caption}>
+                  {hero.map((image) => (
+                    <ProjectShot image={image} sizes={SIZES.front} />
+                  ))}
+                </BrowserFrame>
+              </div>
+
+              {phone && (
+                <div class="fs-layer fs-phone">
+                  <PhoneFrame>
+                    <ProjectShot image={phone} sizes={SIZES.phone} />
+                  </PhoneFrame>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <ul class="fs-chips" aria-label="Implementation details">
+            <li class="fs-chip" data-fs-chip style="--k: 0; --z: 26">
+              <span class="fs-chip-mark" aria-hidden="true" />
+              <span class="sr-only">Request workflow: {workflow.join(', ')}</span>
+              <span class="fs-chip-key" aria-hidden="true">
+                Workflow
+              </span>
+              <span class="fs-wf" aria-hidden="true">
+                {workflow.map((step, i) => (
+                  <span data-fs-step data-on={i === 0 ? '' : undefined}>
+                    {step}
+                  </span>
+                ))}
+              </span>
+            </li>
+            {facts.map((fact, i) => (
+              <li class="fs-chip" data-fs-chip style={`--k: ${i + 1}; --z: ${[18, 30, 22][i]}`}>
+                <span class="fs-chip-mark" aria-hidden="true" />
+                {fact}
+              </li>
+            ))}
+          </ul>
+
+          <figcaption class="fs-caption">Screens from the running app · demo data</figcaption>
+        </figure>
+      )
+    }
+
+    <div class="fs-body">
+      <p class="ch-summary" data-reveal style="--d: 2">{project.summary}</p>
+
+      <dl class="fs-brief" data-reveal style="--d: 3">
+        {
+          brief.map((item) => (
+            <div class="fs-brief-item" data-kind={item.key}>
+              <dt class="ch-label">{item.label}</dt>
+              <dd class="fs-brief-text">{item.text}</dd>
+            </div>
+          ))
+        }
+      </dl>
+
+      {
+        project.statusNote && (
+          <p class="ch-note" data-reveal style="--d: 3">
+            <Icon name="circle-dot" size={14} />
+            <span>{project.statusNote}</span>
+          </p>
+        )
+      }
+
+      <div class="ch-foot" data-reveal style="--d: 4">
+        <ProjectStack project={project} />
+        <ProjectActions project={project} emphasis="primary" />
+      </div>
+    </div>
+  </div>
+</Chapter>
+
+<style>
+  /* ---------------------------------------------------------------- */
+  /* Layout                                                            */
+  /* ---------------------------------------------------------------- */
+
+  .fs-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'head' 'stage' 'body';
+    row-gap: 2.5rem;
+  }
+
+  .fs-head {
+    grid-area: head;
+  }
+
+  .fs-body {
+    grid-area: body;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    min-width: 0;
+  }
+
+  @media (min-width: 64rem) {
+    .fs-grid[data-stage] {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      grid-template-rows: auto 1fr;
+      grid-template-areas:
+        'head stage'
+        'body stage';
+      column-gap: 4rem;
+      row-gap: 2rem;
+    }
+
+    /* The title starts over the lower part of the big numeral. */
+    .fs-head {
+      padding-top: clamp(6rem, 6vw + 1.5rem, 8rem);
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Problem / solution                                                */
+  /* ---------------------------------------------------------------- */
+
+  .fs-brief {
+    display: grid;
+    gap: 1.25rem;
+    margin: 0;
+  }
+
+  @media (min-width: 40rem) and (max-width: 63.98rem) {
+    .fs-brief {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2rem;
+    }
+  }
+
+  .fs-brief-item {
+    padding-left: 1rem;
+    border-left: 1px solid var(--border-strong);
+  }
+
+  .fs-brief-item[data-kind='solution'] {
+    border-left-color: var(--accent-line);
+  }
+
+  .fs-brief-text {
+    margin: 0.375rem 0 0;
+    color: var(--fg-muted);
+    font-size: 0.9375rem;
+    line-height: 1.65;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Stage                                                             */
+  /* ---------------------------------------------------------------- */
+
+  .fs-stage {
+    grid-area: stage;
+    position: relative;
+    margin: 0;
+    container: fs-stage / inline-size;
+  }
+
+  @media (min-width: 64rem) {
+    .fs-stage {
+      position: sticky;
+      top: 6rem;
+      align-self: start;
+    }
+  }
+
+  .fs-scene {
+    position: relative;
+    isolation: isolate;
+    aspect-ratio: 1 / 0.95;
+  }
+
+  .fs-tilt {
+    position: absolute;
+    inset: 0;
+    transform-origin: 45% 50%;
+  }
+
+  .fs-layer {
+    position: absolute;
+  }
+
+  /* Phones: the overview and the phone. */
+  .fs-back {
+    display: none;
+  }
+
+  .fs-front {
+    z-index: 1;
+    top: 6cqw;
+    left: 5cqw;
+    width: 125cqw;
+  }
+
+  .fs-phone {
+    z-index: 2;
+    left: 1cqw;
+    bottom: 2cqw;
+    width: 28cqw;
+  }
+
+  /* The screen behind recedes a little in the dark theme, where it is the brightest layer. */
+  :global(:root:not([data-theme='light'])) .fs-back {
+    filter: brightness(0.8);
+  }
+
+  @media (min-width: 40rem) {
+    .fs-scene {
+      aspect-ratio: 16 / 10.8;
+    }
+
+    .fs-back {
+      display: block;
+      z-index: 0;
+      top: 0;
+      left: 28cqw;
+      width: 78cqw;
+    }
+
+    .fs-front {
+      top: 6cqw;
+      left: 6cqw;
+      width: 88cqw;
+    }
+
+    .fs-phone {
+      left: 0;
+      bottom: 1cqw;
+      width: 16cqw;
+    }
+  }
+
+  /* Beside the text: the front window runs past the column toward the viewport edge. */
+  @media (min-width: 64rem) {
+    .fs-scene {
+      aspect-ratio: 1 / 0.95;
+    }
+
+    .fs-back {
+      top: 0;
+      left: 22cqw;
+      width: 100cqw;
+    }
+
+    .fs-front {
+      top: 19cqw;
+      left: 2cqw;
+      width: 108cqw;
+    }
+
+    .fs-phone {
+      left: -6cqw;
+      bottom: 0;
+      width: 19cqw;
+    }
+  }
+
+  /* Frame response: the front window picks up the accent and a soft glow. */
+  .fs-front :global(.window) {
+    transition:
+      border-color 400ms var(--ease-out-quart),
+      box-shadow 700ms var(--ease-out-expo);
+  }
+
+  .fs-glow {
+    position: absolute;
+    z-index: 0;
+    top: calc(50% + var(--py, 0) * 18%);
+    left: calc(52% + var(--px, 0) * 18%);
+    width: 80cqw;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, var(--accent-glow), transparent);
+    opacity: 0;
+    translate: -50% -50%;
+    pointer-events: none;
+    transition: opacity 700ms var(--ease-out-quart);
+  }
+
+  @media (hover: hover) {
+    .fs-stage:hover .fs-front :global(.window) {
+      border-color: var(--accent-line);
+      box-shadow:
+        0 0 0 1px var(--accent-line),
+        0 28px 80px -32px var(--accent-glow),
+        var(--shadow-float);
+    }
+
+    .fs-stage:hover .fs-glow {
+      opacity: 0.32;
+    }
+  }
+
+  /* Tilt toward the pointer + parallax by depth (--px / --py: -1…1). */
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .fs-tilt {
+      transform: perspective(1800px) rotateX(calc(var(--py, 0) * -3deg)) rotateY(calc(var(--px, 0) * 4deg));
+      transition: transform 900ms var(--ease-out-expo);
+    }
+
+    .fs-layer {
+      translate: calc(var(--px, 0) * var(--z, 0) * 1px) calc(var(--py, 0) * var(--z, 0) * 1px);
+      transition: translate 900ms var(--ease-out-expo);
+    }
+
+    .fs-stage[data-pointer] .fs-tilt,
+    .fs-stage[data-pointer] .fs-layer {
+      transition-duration: 320ms;
+    }
+
+    .fs-back {
+      --z: -10;
+    }
+
+    .fs-front {
+      --z: 6;
+    }
+
+    .fs-phone {
+      --z: 18;
+    }
+  }
+
+  /* Entrance: the composition slides in from the side it bleeds toward. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.js) .fs-scene[data-reveal] {
+      transform: translateX(2.5rem) scale(0.985);
+      transition-duration: 1100ms;
+    }
+
+    :global(html.js) .fs-scene[data-reveal]:global(.is-visible) {
+      transform: none;
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Implementation chips                                              */
+  /* ---------------------------------------------------------------- */
+
+  /* Default (touch, narrow screens, no JS): a plain list of facts under the screens. */
+  .fs-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .fs-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--fg-muted);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.01em;
+    transition:
+      opacity 500ms var(--ease-out-quart),
+      translate 800ms var(--ease-out-expo),
+      border-color 300ms var(--ease-out-quart),
+      box-shadow 400ms var(--ease-out-quart),
+      color 300ms var(--ease-out-quart);
+  }
+
+  .fs-chip-mark {
+    width: 0.375rem;
+    height: 0.375rem;
+    background: var(--pixel);
+    flex: none;
+  }
+
+  .fs-chip-key {
+    color: var(--fg-subtle);
+  }
+
+  /* The workflow chip steps through the real status transitions. */
+  .fs-wf {
+    display: inline-grid;
+  }
+
+  .fs-wf > span {
+    grid-area: 1 / 1;
+    white-space: nowrap;
+    color: var(--fg);
+    opacity: 0;
+    translate: 0 0.5em;
+    transition:
+      opacity 300ms var(--ease-out-quart),
+      translate 500ms var(--ease-out-expo);
+  }
+
+  .fs-wf > span[data-on] {
+    opacity: 1;
+    translate: none;
+  }
+
+  /* Desktop with a mouse: chips float over the composition, appear on hover
+     and take turns highlighting (script below). */
+  @media (min-width: 64rem) and (hover: hover) and (pointer: fine) {
+    .fs-chips {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      display: block;
+      margin: 0;
+      pointer-events: none;
+    }
+
+    .fs-chip {
+      position: absolute;
+      min-height: 1.875rem;
+      padding: 0.3125rem 0.75rem;
+      border: 1px solid var(--border-strong);
+      border-radius: 0.5rem;
+      background: color-mix(in oklab, var(--surface) 86%, transparent);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      white-space: nowrap;
+      opacity: 0;
+      box-shadow: var(--shadow-float);
+      translate: calc(var(--px, 0) * var(--z, 0) * 1px) calc(var(--py, 0) * var(--z, 0) * 1px + 0.625rem);
+      transition-delay: 0ms, 0ms, 0ms, 0ms, 0ms;
+    }
+
+    /* Spots clear of the window titles and the phone. */
+    .fs-chip:nth-child(1) {
+      top: 9cqw;
+      left: 1cqw;
+    }
+
+    .fs-chip:nth-child(2) {
+      top: 12.5cqw;
+      right: -5cqw;
+    }
+
+    .fs-chip:nth-child(3) {
+      top: 52cqw;
+      right: -4cqw;
+    }
+
+    .fs-chip:nth-child(4) {
+      top: 87cqw;
+      left: 17cqw;
+    }
+
+    .fs-stage:hover .fs-chip {
+      opacity: 1;
+      translate: calc(var(--px, 0) * var(--z, 0) * 1px) calc(var(--py, 0) * var(--z, 0) * 1px);
+      transition-delay: calc(var(--k, 0) * 110ms + 120ms), calc(var(--k, 0) * 110ms + 120ms), 0ms, 0ms, 0ms;
+    }
+
+    .fs-stage[data-pointer] .fs-chip {
+      transition-duration: 500ms, 320ms, 300ms, 400ms, 300ms;
+    }
+
+    .fs-chip[data-active] {
+      border-color: var(--accent-line);
+      color: var(--fg);
+      box-shadow:
+        0 0 0 3px var(--accent-soft),
+        0 12px 32px -14px var(--accent-glow),
+        var(--shadow-float);
+    }
+  }
+
+  @media (min-width: 64rem) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: reduce) {
+    .fs-chip,
+    .fs-stage:hover .fs-chip {
+      translate: none;
+    }
+  }
+
+  .fs-caption {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.02em;
+  }
+
+  .fs-caption::before {
+    content: '';
+    width: 0.4375rem;
+    height: 0.4375rem;
+    border: 1px solid var(--accent-line);
+    background: var(--accent-soft);
+    rotate: 45deg;
+    flex: none;
+  }
+
+  @media (min-width: 64rem) and (hover: hover) and (pointer: fine) {
+    .fs-caption {
+      margin-top: 1.5rem;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * While a mouse is over the composition, highlight one chip at a time and
+   * step the workflow chip through its transitions. Never autoplays: it only
+   * runs during hover, and not at all with reduced motion.
+   */
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 64rem)');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  document.querySelectorAll<HTMLElement>('[data-fs-stage]').forEach((stage) => {
+    const chips = Array.from(stage.querySelectorAll<HTMLElement>('[data-fs-chip]'));
+    const steps = Array.from(stage.querySelectorAll<HTMLElement>('[data-fs-step]'));
+    let timer = 0;
+    let chip = -1;
+    let step = 0;
+
+    const render = () => {
+      chips.forEach((el, i) => el.toggleAttribute('data-active', i === chip));
+      steps.forEach((el, i) => el.toggleAttribute('data-on', i === step));
+    };
+
+    const tick = () => {
+      chip = (chip + 1) % chips.length;
+      step = (step + 1) % steps.length;
+      render();
+    };
+
+    stage.addEventListener('pointerenter', (event) => {
+      if (event.pointerType !== 'mouse' || timer || !finePointer.matches || reducedMotion.matches) return;
+      chip = 0;
+      render();
+      timer = window.setInterval(tick, 1900);
+    });
+
+    stage.addEventListener('pointerleave', () => {
+      window.clearInterval(timer);
+      timer = 0;
+      chip = -1;
+      step = 0;
+      render();
+    });
+  });
+</script>

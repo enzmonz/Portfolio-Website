@@ -1,0 +1,609 @@
+---
+/**
+ * CSS-built phone showing a recreation of the Mobile Booking app's four-step
+ * flow (screens in ./booking/AppScreen.astro).
+ *
+ * interactive (default): a WAI-ARIA tab stepper under the phone switches
+ * screens. It auto-advances every 3.2s only while the phone is on screen,
+ * nobody has used the stepper, the pointer/focus isn't inside, and reduced
+ * motion is off. Without JS, screen 1 shows and the stepper is static.
+ * interactive={false}: screen 1 only, no stepper.
+ *
+ * All ids derive from `idPrefix`, so several instances can share a page.
+ */
+import type { ComponentProps } from 'astro/types';
+import { getProject } from '@/data/projects';
+import { cn } from '@/lib/cn';
+import AppScreen from './booking/AppScreen.astro';
+import { statusGlyphs } from './booking/icons';
+
+type AppScreenName = ComponentProps<typeof AppScreen>['screen'];
+
+interface Props {
+  interactive?: boolean;
+  size?: 'md' | 'lg';
+  class?: string;
+  idPrefix?: string;
+}
+
+const { interactive = true, size = 'md', class: className, idPrefix = 'booking' } = Astro.props;
+
+/** Auto-advance interval; also the duration of the tab progress bar. */
+const INTERVAL_MS = 3200;
+
+// Step labels come from the project's flow data; the screens are fixed.
+const flow = getProject('mobile-booking')?.flow ?? [];
+const screenDefs: { key: AppScreenName; fallback: string }[] = [
+  { key: 'availability', fallback: 'Check Availability' },
+  { key: 'review', fallback: 'Create Booking' },
+  { key: 'confirmed', fallback: 'Confirmation' },
+  { key: 'history', fallback: 'Booking History' },
+];
+const screens = screenDefs.map((def, i) => {
+  const label = flow[i]?.label ?? def.fallback;
+  return {
+    ...def,
+    label,
+    name: `${label.charAt(0)}${label.slice(1).toLowerCase()} screen`,
+    tabId: `${idPrefix}-tab-${i + 1}`,
+    panelId: `${idPrefix}-panel-${i + 1}`,
+  };
+});
+const first = screens[0];
+
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+
+<figure
+  class={cn('bp', className)}
+  data-size={size}
+  data-booking-phone
+  data-interactive={interactive ? '' : undefined}
+  style={`--bp-interval: ${INTERVAL_MS}ms`}
+>
+  <div class="bp-device">
+    <div class="bp-screen">
+      <div class="bp-status" aria-hidden="true">
+        <span class="bp-clock">9:41</span>
+        <span class="bp-glyphs">
+          {
+            Object.entries(statusGlyphs).map(([name, glyph]) => (
+              <svg class="bp-glyph" data-glyph={name} viewBox={glyph.viewBox} focusable="false" set:html={glyph.body} />
+            ))
+          }
+        </span>
+      </div>
+      <span class="bp-island" aria-hidden="true"></span>
+
+      <div class="bp-views">
+        {
+          interactive ? (
+            screens.map((s, i) => (
+              <div
+                class="bp-view"
+                role="tabpanel"
+                id={s.panelId}
+                aria-label={s.name}
+                tabindex="0"
+                data-state={i === 0 ? 'active' : 'after'}
+              >
+                <AppScreen screen={s.key} />
+              </div>
+            ))
+          ) : (
+            <div class="bp-view" role="group" aria-label={first.name} data-state="active">
+              <AppScreen screen={first.key} />
+            </div>
+          )
+        }
+      </div>
+
+      <span class="bp-home" aria-hidden="true"></span>
+    </div>
+  </div>
+
+  {
+    interactive && (
+      <div class="bp-flow">
+        <div class="bp-tabs" role="tablist" aria-label="Booking flow">
+          {screens.map((s, i) => (
+            <button
+              type="button"
+              class="bp-tab"
+              role="tab"
+              id={s.tabId}
+              aria-controls={s.panelId}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              tabindex={i === 0 ? 0 : -1}
+            >
+              <span class="bp-track" aria-hidden="true">
+                <span class="bp-fill" data-progress />
+              </span>
+              <span class="bp-index" aria-hidden="true">
+                {pad(i + 1)}
+              </span>
+              <span class="bp-label">{s.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  <figcaption class="bp-caption">Interface recreation · based on the app’s screens</figcaption>
+</figure>
+
+<style>
+  .bp {
+    --bp-w: 256px;
+    --bp-bezel: 8px;
+    --bp-radius: 2.75rem;
+    --bp-ease: var(--ease-out-quart);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .bp[data-size='lg'] {
+    --bp-w: 300px;
+    --bp-bezel: 9px;
+    --bp-radius: 3.125rem;
+  }
+
+  /* ---------------- Hardware (dark in both themes) ---------------- */
+
+  .bp-device {
+    position: relative;
+    display: grid;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+    width: var(--bp-w);
+    max-width: 100%;
+    aspect-ratio: 9 / 19.5;
+    padding: var(--bp-bezel);
+    border-radius: var(--bp-radius);
+    background: linear-gradient(160deg, #1c1c20, var(--code-bg) 38%);
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.09),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.14),
+      0 0 0 1px var(--border-strong),
+      var(--shadow-float);
+  }
+
+  /* Side keys: power on the right, two volume keys on the left. */
+  .bp-device::before,
+  .bp-device::after {
+    content: '';
+    position: absolute;
+    width: 2px;
+    pointer-events: none;
+  }
+
+  .bp-device::before {
+    top: 25%;
+    right: -2px;
+    height: 12%;
+    border-radius: 0 2px 2px 0;
+    background: #26262b;
+  }
+
+  .bp-device::after {
+    top: 19%;
+    left: -2px;
+    height: 15%;
+    border-radius: 2px 0 0 2px;
+    background: linear-gradient(to bottom, #26262b 0 44%, transparent 44% 56%, #26262b 56%);
+  }
+
+  /* Keyboard focus on a screen panel rings the whole device. */
+  .bp-device:has(.bp-view:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+
+  .bp-screen {
+    /* One app point: the recreated layouts are 340pt wide. */
+    --u: calc(100cqi / 340);
+    position: relative;
+    container-type: inline-size;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: calc(var(--bp-radius) - var(--bp-bezel));
+    background: #f5f4ef;
+    color: #151515;
+    font-family: var(--font-sans);
+    font-feature-settings: normal;
+  }
+
+  /* Hairline where glass meets bezel. */
+  .bp-screen::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.35);
+    pointer-events: none;
+  }
+
+  .bp-status {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: calc(var(--u) * 51);
+    padding: 0 calc(var(--u) * 26) 0 calc(var(--u) * 40);
+    pointer-events: none;
+  }
+
+  .bp-clock {
+    font-size: calc(var(--u) * 15);
+    font-weight: 600;
+    letter-spacing: calc(var(--u) * -0.2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bp-glyphs {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--u) * 5);
+  }
+
+  .bp-glyph {
+    height: calc(var(--u) * 11);
+  }
+
+  .bp-glyph[data-glyph='signal'] {
+    width: calc(var(--u) * 17);
+  }
+
+  .bp-glyph[data-glyph='wifi'] {
+    width: calc(var(--u) * 15.3);
+  }
+
+  .bp-glyph[data-glyph='battery'] {
+    width: calc(var(--u) * 24.4);
+    height: calc(var(--u) * 11.3);
+  }
+
+  .bp-island {
+    position: absolute;
+    top: calc(var(--u) * 11);
+    left: 50%;
+    z-index: 4;
+    width: calc(var(--u) * 100);
+    height: calc(var(--u) * 29);
+    border-radius: 999px;
+    background: #000;
+    transform: translateX(-50%);
+  }
+
+  /* Camera lens */
+  .bp-island::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 13%;
+    width: calc(var(--u) * 9);
+    height: calc(var(--u) * 9);
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #2b3140, #0b0d12 70%);
+    transform: translateY(-50%);
+  }
+
+  .bp-home {
+    position: absolute;
+    bottom: calc(var(--u) * 8);
+    left: 50%;
+    z-index: 3;
+    width: calc(var(--u) * 118);
+    height: max(3px, calc(var(--u) * 4.5));
+    border-radius: 999px;
+    background: #151515;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  /* ---------------- Screens: crossfade with a slight slide ---------------- */
+
+  .bp-views {
+    position: absolute;
+    inset: calc(var(--u) * 51) 0 0;
+  }
+
+  .bp-view {
+    position: absolute;
+    inset: 0;
+    outline: none;
+    transition:
+      opacity 420ms var(--bp-ease),
+      transform 420ms var(--bp-ease),
+      visibility 0s linear 0s;
+  }
+
+  .bp-view:not([data-state='active']) {
+    visibility: hidden;
+    opacity: 0;
+    transition-delay: 0s, 0s, 420ms;
+  }
+
+  .bp-view[data-state='before'] {
+    transform: translateX(-5%);
+  }
+
+  .bp-view[data-state='after'] {
+    transform: translateX(5%);
+  }
+
+  /* ---------------- Flow stepper (WAI-ARIA tabs) ---------------- */
+
+  .bp-flow {
+    container: bp-flow / inline-size;
+    width: 100%;
+    max-width: 32rem;
+    margin-top: 1.75rem;
+  }
+
+  .bp-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.25rem 1rem;
+  }
+
+  @container bp-flow (min-width: 25rem) {
+    .bp-tabs {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      column-gap: 0.75rem;
+    }
+  }
+
+  .bp-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    min-height: 3.5rem;
+    padding: 0 0 0.5rem;
+    border: 0;
+    background: none;
+    color: var(--fg-muted);
+    text-align: left;
+    cursor: default;
+    transition: color 200ms var(--bp-ease);
+  }
+
+  :global(html.js) .bp-tab {
+    cursor: pointer;
+  }
+
+  .bp-track {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 2px;
+    margin-bottom: 0.625rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--border-strong);
+    transition: background-color 300ms var(--bp-ease);
+  }
+
+  .bp-fill {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 500ms var(--ease-out-expo);
+  }
+
+  .bp-index {
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+    transition: color 200ms var(--bp-ease);
+  }
+
+  .bp-label {
+    margin-top: 0.125rem;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    font-weight: 500;
+    letter-spacing: -0.006em;
+    text-wrap: balance;
+  }
+
+  .bp-tab[data-done] .bp-track {
+    background: var(--border-hover);
+  }
+
+  .bp-tab[aria-selected='true'] {
+    color: var(--fg);
+  }
+
+  .bp-tab[aria-selected='true'] .bp-index {
+    color: var(--accent-text);
+  }
+
+  .bp-tab[aria-selected='true'] .bp-fill {
+    transform: scaleX(1);
+  }
+
+  @media (hover: hover) {
+    :global(html.js) .bp-tab:hover {
+      color: var(--fg);
+    }
+
+    :global(html.js) .bp-tab:hover .bp-track {
+      background: var(--border-hover);
+    }
+  }
+
+  /* While auto-advancing, the active track fills over one interval; its
+     animationend drives the next step (see script). */
+  .bp[data-autoplay] .bp-tab[aria-selected='true'] .bp-fill {
+    animation: bp-progress var(--bp-interval) linear both;
+    transition: none;
+  }
+
+  /* Must outrank the shorthand above, which resets the play state. */
+  .bp[data-autoplay][data-paused] .bp-tab[aria-selected='true'] .bp-fill {
+    animation-play-state: paused;
+  }
+
+  @keyframes bp-progress {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  /* ---------------- Caption ---------------- */
+
+  .bp-caption {
+    margin-top: 1.25rem;
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.02em;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .bp-flow + .bp-caption {
+    margin-top: 1rem;
+  }
+</style>
+
+<script>
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function initBookingPhone(root: HTMLElement) {
+    if (root.dataset.ready !== undefined) return;
+    root.dataset.ready = '';
+
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const panels = tabs.map((tab) => document.getElementById(tab.getAttribute('aria-controls') ?? ''));
+    const count = tabs.length;
+    if (!count || panels.some((p) => !p)) return;
+
+    let active = Math.max(
+      0,
+      tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true'),
+    );
+
+    const select = (index: number, focus = false) => {
+      const next = ((index % count) + count) % count;
+      tabs.forEach((tab, i) => {
+        const on = i === next;
+        tab.setAttribute('aria-selected', String(on));
+        tab.tabIndex = on ? 0 : -1;
+        tab.toggleAttribute('data-done', i < next);
+        panels[i]!.dataset.state = on ? 'active' : i < next ? 'before' : 'after';
+      });
+      active = next;
+      if (focus) tabs[next].focus();
+    };
+
+    /* ---- Auto-advance ---- */
+    let stopped = reduceMotion.matches;
+    let inView = false;
+    let hovered = false;
+    let focused = false;
+
+    const sync = () => {
+      if (stopped) {
+        delete root.dataset.autoplay;
+        delete root.dataset.paused;
+        return;
+      }
+      root.toggleAttribute('data-paused', !inView || hovered || focused || document.hidden);
+      root.dataset.autoplay = '';
+    };
+
+    const stop = () => {
+      if (stopped) return;
+      stopped = true;
+      sync();
+    };
+
+    root.addEventListener('animationend', (event) => {
+      if (stopped || !(event.target as Element).hasAttribute('data-progress')) return;
+      select(active + 1);
+    });
+
+    /* ---- Tabs: click + roving keyboard focus ---- */
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => {
+        stop();
+        select(i);
+      });
+      tab.addEventListener('keydown', (event) => {
+        const keys: Record<string, number> = {
+          ArrowRight: i + 1,
+          ArrowLeft: i - 1,
+          Home: 0,
+          End: count - 1,
+        };
+        if (!(event.key in keys)) return;
+        event.preventDefault();
+        stop();
+        select(keys[event.key], true);
+      });
+    });
+
+    /* ---- Pause conditions ---- */
+    root.addEventListener('pointerenter', (e) => {
+      if (e.pointerType === 'mouse') {
+        hovered = true;
+        sync();
+      }
+    });
+    root.addEventListener('pointerleave', (e) => {
+      if (e.pointerType === 'mouse') {
+        hovered = false;
+        sync();
+      }
+    });
+    root.addEventListener('focusin', () => {
+      focused = true;
+      sync();
+    });
+    root.addEventListener('focusout', (e) => {
+      if (root.contains(e.relatedTarget as Node | null)) return;
+      focused = false;
+      sync();
+    });
+    document.addEventListener('visibilitychange', sync);
+    reduceMotion.addEventListener('change', (e) => {
+      if (e.matches) stop();
+    });
+
+    const device = root.querySelector('.bp-device') ?? root;
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(
+        ([entry]) => {
+          inView = entry.isIntersecting;
+          sync();
+        },
+        { threshold: 0.35 },
+      ).observe(device);
+    } else {
+      stop();
+    }
+
+    sync();
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-booking-phone][data-interactive]').forEach(initBookingPhone);
+</script>

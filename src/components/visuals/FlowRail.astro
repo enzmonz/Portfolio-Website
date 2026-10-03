@@ -1,0 +1,423 @@
+---
+/**
+ * Numbered step pipeline (01 → 02 → …).
+ *
+ * Vertical rail on narrow screens; equal columns joined by arrowed connectors
+ * at md+ when the row has room (≈ 7.5rem per step at md, 6.5rem at sm), so a
+ * rail inside a narrow card stays vertical instead of cramping.
+ * Partial / planned steps are labelled in text, not only by color.
+ */
+import type { ArchitectureNode, Availability } from '@/data/projects';
+import { cn } from '@/lib/cn';
+
+interface Props {
+  steps: ArchitectureNode[];
+  /** Accessible name for the ordered list, e.g. "Booking flow". */
+  label: string;
+  class?: string;
+  size?: 'sm' | 'md';
+}
+
+const { steps, label, class: className, size = 'md' } = Astro.props;
+
+type LinkKind = 'live' | 'solid' | 'planned';
+const statusOf = (step: ArchitectureNode): Availability => step.status ?? 'implemented';
+
+function linkKind(from: ArchitectureNode, to: ArchitectureNode): LinkKind {
+  const a = statusOf(from);
+  const b = statusOf(to);
+  if (a === 'planned' || b === 'planned') return 'planned';
+  if (a === 'implemented' && b === 'implemented') return 'live';
+  return 'solid';
+}
+
+const n = steps.length;
+const minStepRem = size === 'sm' ? 6.5 : 7.5;
+const gapRem = size === 'sm' ? 1 : 1.25;
+
+/* Horizontal only when each column gets `minStepRem`: the fit wrapper is scaled
+   by k = BASE / needed so one container query (min-width: BASE) decides it. */
+const BASE_REM = 12;
+const neededRem = n * minStepRem + Math.max(0, n - 1) * gapRem;
+const k = Math.min(1, BASE_REM / neededRem);
+
+const pad = (i: number) => String(i).padStart(2, '0');
+---
+
+<div class={cn('rail', className)} data-size={size} data-inview style={`--n:${n};--k:${k.toFixed(4)}`}>
+  <div class="rail-fit">
+    <ol class="rail-list" aria-label={label}>
+      {
+        steps.map((step, i) => {
+          const status = statusOf(step);
+          const next = steps[i + 1];
+          const kind = next ? linkKind(step, next) : null;
+          return (
+            <li class="step" data-status={status} style={`--i:${i}`}>
+              <span class="step-dot" aria-hidden="true" />
+
+              {kind && (
+                <span class="step-conn conn-h" data-link={kind} aria-hidden="true">
+                  <svg class="conn-line" height="10" focusable="false">
+                    <line class="conn-base" x1="0" y1="5" x2="100%" y2="5" />
+                    {kind === 'live' && <line class="conn-flow flow-dash" x1="0" y1="5" x2="100%" y2="5" />}
+                  </svg>
+                  <svg class="conn-arrow" width="7" height="10" viewBox="0 0 7 10" focusable="false">
+                    <path d="M1.5 1.5 5.5 5 1.5 8.5" />
+                  </svg>
+                </span>
+              )}
+
+              {kind && (
+                <span class="step-conn conn-v" data-link={kind} aria-hidden="true">
+                  <svg class="conn-line" width="2" focusable="false">
+                    <line class="conn-base" x1="1" y1="0" x2="1" y2="100%" />
+                    {kind === 'live' && <line class="conn-flow flow-dash" x1="1" y1="0" x2="1" y2="100%" />}
+                  </svg>
+                </span>
+              )}
+
+              <div class="step-body">
+                <span class="step-index" aria-hidden="true">
+                  {pad(i + 1)}
+                </span>
+                <p class="step-label-row">
+                  <span class="step-label">{step.label}</span>
+                  {status === 'planned' && (
+                    <span class="step-tag" data-tone="planned">
+                      Planned
+                    </span>
+                  )}
+                  {status === 'partial' && (
+                    <span class="step-tag" data-tone="partial">
+                      Partial
+                    </span>
+                  )}
+                </p>
+                {step.detail && <p class="step-detail">{step.detail}</p>}
+              </div>
+            </li>
+          );
+        })
+      }
+    </ol>
+  </div>
+</div>
+
+<style>
+  .rail {
+    --dot: 0.625rem;
+    --rail-w: 1.25rem;
+    --row-gap: 1.75rem;
+    --col-gap: 1.25rem;
+    --body-pt: 1.125rem;
+    --label-fs: 0.9375rem;
+    --detail-fs: 0.8125rem;
+    min-width: 0;
+  }
+
+  .rail[data-size='sm'] {
+    --dot: 0.5625rem;
+    --rail-w: 1rem;
+    --row-gap: 1.25rem;
+    --col-gap: 1rem;
+    --body-pt: 0.875rem;
+    --label-fs: 0.84375rem;
+    --detail-fs: 0.75rem;
+  }
+
+  .rail-fit {
+    container: rail-fit / inline-size;
+    width: calc(100% * var(--k, 1));
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Vertical rail (default)                                           */
+  /* ---------------------------------------------------------------- */
+
+  .rail-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--row-gap);
+    width: calc(100% / var(--k, 1));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .step {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--rail-w) minmax(0, 1fr);
+    grid-template-areas: 'dot body';
+    column-gap: 0.875rem;
+    min-width: 0;
+  }
+
+  .step-dot {
+    grid-area: dot;
+    justify-self: center;
+    align-self: start;
+    /* Centered on the first text line (the 1rem-tall index). */
+    margin-top: calc((1rem - var(--dot)) / 2);
+    width: var(--dot);
+    height: var(--dot);
+    border-radius: 999px;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+
+  .step[data-status='partial'] .step-dot {
+    background: linear-gradient(90deg, var(--warn) 50%, transparent 50%);
+    box-shadow:
+      inset 0 0 0 1.5px var(--warn),
+      0 0 0 4px var(--warn-soft);
+  }
+
+  .step[data-status='planned'] .step-dot {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--fg-faint);
+  }
+
+  .step-conn {
+    pointer-events: none;
+  }
+
+  .conn-h {
+    display: none;
+  }
+
+  /* Segment from below this dot to just above the next one. */
+  .conn-v {
+    position: absolute;
+    left: calc(var(--rail-w) / 2 - 1px);
+    top: calc((1rem - var(--dot)) / 2 + var(--dot) + 6px);
+    bottom: calc(6px - var(--row-gap) - (1rem - var(--dot)) / 2);
+    width: 2px;
+  }
+
+  .conn-v .conn-line {
+    width: 2px;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .step-body {
+    grid-area: body;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .step-index {
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.06em;
+  }
+
+  .step-label-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.5rem;
+    margin-top: 0.375rem;
+  }
+
+  .step-label {
+    color: var(--fg);
+    font-size: var(--label-fs);
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.012em;
+    overflow-wrap: break-word;
+  }
+
+  .step[data-status='planned'] .step-label {
+    color: var(--fg-muted);
+  }
+
+  .step-detail {
+    margin-top: 0.25rem;
+    color: var(--fg-subtle);
+    font-size: var(--detail-fs);
+    line-height: 1.5;
+    overflow-wrap: break-word;
+  }
+
+  .step-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 1.125rem;
+    padding-inline: 0.375rem;
+    border: 1px solid transparent;
+    border-radius: 0.3125rem;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .step-tag[data-tone='planned'] {
+    border-style: dashed;
+    border-color: var(--border-hover);
+    color: var(--fg-subtle);
+  }
+
+  .step-tag[data-tone='partial'] {
+    border-color: color-mix(in oklab, var(--warn) 35%, transparent);
+    background: var(--warn-soft);
+    color: var(--warn);
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Horizontal pipeline (md+, when the row has room)                  */
+  /* ---------------------------------------------------------------- */
+
+  @media (min-width: 48rem) {
+    @container rail-fit (min-width: 12rem) {
+      .rail-list {
+        grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+        column-gap: var(--col-gap);
+        row-gap: 0;
+      }
+
+      .step {
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas:
+          'dot conn'
+          'body body';
+        align-items: center;
+        column-gap: 0;
+      }
+
+      .step-dot {
+        justify-self: start;
+        align-self: center;
+        margin-top: 0;
+      }
+
+      .conn-h {
+        grid-area: conn;
+        position: relative;
+        display: block;
+        height: 10px;
+        /* From just after this dot to just before the next column's dot. */
+        margin-left: 0.5rem;
+        margin-right: calc(0.5rem - var(--col-gap));
+      }
+
+      .conn-h .conn-line {
+        width: calc(100% - 1.5px);
+        overflow: visible;
+      }
+
+      .conn-arrow {
+        position: absolute;
+        top: 0;
+        right: 0;
+      }
+
+      .conn-v {
+        display: none;
+      }
+
+      .step-body {
+        align-self: start;
+        padding-top: var(--body-pt);
+        padding-right: 0.25rem;
+      }
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Strokes                                                           */
+  /* ---------------------------------------------------------------- */
+
+  .conn-base {
+    stroke: var(--border-hover);
+    stroke-width: 1;
+  }
+
+  .conn-v .conn-base,
+  .conn-v .conn-flow {
+    stroke-width: 1;
+  }
+
+  .conn-flow {
+    stroke: var(--accent);
+    stroke-width: 1.25;
+    opacity: 0.85;
+  }
+
+  .conn-arrow path {
+    fill: none;
+    stroke: var(--fg-subtle);
+    stroke-width: 1.25;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  [data-link='planned'] .conn-base {
+    stroke-dasharray: 2 4;
+  }
+
+  [data-link='planned'] .conn-arrow path {
+    stroke: var(--fg-faint);
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Entrance (JS only; the no-JS and reduced-motion state is final)   */
+  /* ---------------------------------------------------------------- */
+
+  :global(html.js) .rail .step-dot {
+    transition:
+      opacity 600ms var(--ease-out-expo),
+      transform 600ms var(--ease-out-expo);
+    transition-delay: calc(var(--i, 0) * 160ms);
+  }
+
+  :global(html.js) .rail:not([data-visible='true']) .step-dot {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+
+  :global(html.js) .rail .step-body {
+    transition:
+      opacity 800ms var(--ease-out-expo),
+      transform 800ms var(--ease-out-expo);
+    transition-delay: calc(var(--i, 0) * 160ms + 60ms);
+  }
+
+  :global(html.js) .rail:not([data-visible='true']) .step-body {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  :global(html.js) .rail .step-conn {
+    clip-path: inset(-4px);
+    transition: clip-path 1000ms var(--ease-out-expo);
+    transition-delay: calc(var(--i, 0) * 160ms + 200ms);
+  }
+
+  :global(html.js) .rail:not([data-visible='true']) .conn-h {
+    clip-path: inset(-4px 100% -4px -4px);
+  }
+
+  :global(html.js) .rail:not([data-visible='true']) .conn-v {
+    clip-path: inset(-4px -4px 100% -4px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .conn-flow {
+      display: none;
+    }
+
+    [data-link='live'] .conn-base {
+      stroke: var(--accent-line);
+    }
+  }
+</style>

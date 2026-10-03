@@ -1,0 +1,115 @@
+---
+/**
+ * Engineering notes (project highlights) as numbered cards: a 2-column grid
+ * from sm up; an odd last card spans the full row.
+ */
+import type { Highlight } from '@/data/projects';
+import { cn } from '@/lib/cn';
+
+interface Props {
+  notes: Highlight[];
+  class?: string;
+}
+
+const { notes, class: className } = Astro.props;
+const pad = (n: number) => String(n).padStart(2, '0');
+const odd = notes.length % 2 === 1;
+---
+
+<ul class={cn('nt', notes.length > 1 && 'nt--grid', className)}>
+  {
+    notes.map((note, i) => (
+      <li
+        class={cn('nt-card card spotlight', odd && i === notes.length - 1 && 'nt-card--wide')}
+        data-reveal
+        style={`--d: ${i % 2}`}
+      >
+        {notes.length > 1 && (
+          <span class="nt-index" aria-hidden="true">
+            <span>{pad(i + 1)}</span>
+            <span class="nt-rule" />
+          </span>
+        )}
+        <h3 class="nt-title">{note.title}</h3>
+        <p class="nt-body">{note.body}</p>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .nt {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .nt-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+  }
+
+  .nt-card:hover {
+    border-color: var(--border-strong);
+  }
+
+  .nt-index {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--fg-subtle);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .nt-rule {
+    width: 1.5rem;
+    height: 1px;
+    background: var(--border-strong);
+    transition:
+      width 500ms var(--ease-out-expo),
+      background-color 300ms var(--ease-out-quart);
+  }
+
+  .nt-card:hover .nt-rule {
+    width: 2.5rem;
+    background: var(--accent-line);
+  }
+
+  .nt-index + .nt-title {
+    margin-top: 1.25rem;
+  }
+
+  .nt-title {
+    color: var(--fg);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+  }
+
+  .nt-body {
+    margin-top: 0.5rem;
+    color: var(--fg-muted);
+    font-size: 0.9375rem;
+    line-height: 1.65;
+  }
+
+  @media (min-width: 40rem) {
+    .nt--grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .nt-card--wide {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (min-width: 48rem) {
+    .nt-card {
+      padding: 1.75rem;
+    }
+  }
+</style>

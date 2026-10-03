@@ -1,0 +1,86 @@
+---
+import Icon from '@/components/ui/Icon.astro';
+import LogoMark from '@/components/ui/LogoMark.astro';
+import { site } from '@/data/site';
+import { socialLink } from '@/lib/links';
+import type { IconName } from '@/components/ui/icons';
+
+const links: { link: ReturnType<typeof socialLink>; icon: IconName }[] = [
+  { link: socialLink('linkedin'), icon: 'linkedin-brand' },
+  { link: socialLink('email'), icon: 'mail' },
+  { link: socialLink('github'), icon: 'github' },
+];
+---
+
+<footer class="relative border-t border-border">
+  <div class="container-page flex flex-col gap-10 py-12 md:flex-row md:items-end md:justify-between md:py-14">
+    <div class="flex items-start gap-3.5">
+      <LogoMark size={36} />
+      <div>
+        <p class="font-pixel text-[1.125rem] leading-none tracking-[0.02em] text-fg uppercase">{site.name}</p>
+        <p class="mt-1 text-sm text-fg-subtle">Software Developer · Computer Science Student</p>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-6 md:items-end">
+      <ul class="flex flex-wrap items-center gap-x-1 gap-y-2" aria-label="Elsewhere">
+        {
+          links.map(({ link, icon }, i) => (
+            <li class="flex items-center">
+              {i > 0 && (
+                <span class="mx-2 text-fg-faint" aria-hidden="true">
+                  ·
+                </span>
+              )}
+              {link.href ? (
+                <a
+                  href={link.href}
+                  class="footer-link"
+                  {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                >
+                  <Icon name={icon} size={14} />
+                  {link.label}
+                  {link.external && <span class="sr-only"> (opens in a new tab)</span>}
+                </a>
+              ) : (
+                <span class="footer-link is-missing" title={link.missing}>
+                  <Icon name={icon} size={14} />
+                  {link.label}
+                  <span class="sr-only"> — {link.missing}</span>
+                </span>
+              )}
+            </li>
+          ))
+        }
+      </ul>
+      <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-label text-fg-subtle">
+        <p>© {site.copyrightYear} {site.name}</p>
+        <a href="#main" class="inline-flex items-center gap-1.5 transition-colors hover:text-fg" data-back-to-top>
+          Back to top
+          <Icon name="arrow-up-right" size={12} class="-rotate-45" />
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4375rem;
+    padding: 0.25rem 0.125rem;
+    font-size: 0.875rem;
+    color: var(--fg-muted);
+    transition: color 200ms;
+  }
+
+  a.footer-link:hover {
+    color: var(--fg);
+  }
+
+  .footer-link.is-missing {
+    color: var(--fg-faint);
+    cursor: not-allowed;
+  }
+</style>
