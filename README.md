@@ -1,114 +1,262 @@
 # Enzo Monzon — Portfolio
 
-Personal portfolio of **Enzo Monzon**, Software Developer and Computer Science student at Pamantasan ng Lungsod ng Maynila.
+A personal portfolio website for **Enzo Monzon**, a Computer Science student and software developer from **Pamantasan ng Lungsod ng Maynila (PLM)**.
 
-It is built with **Astro 7**, **TypeScript** and **Tailwind CSS 4**. It is a static site and uses no UI framework. Interactivity comes from a few kilobytes of vanilla TypeScript, and every page works without JavaScript.
+The portfolio showcases selected projects, experience, technical skills, and software development work through an interactive, pixel-inspired interface.
+
+## ✨ Overview
+
+This portfolio was designed to be more than a traditional personal website. It combines a clean developer-focused layout with a **pixel-inspired visual style**, interactive navigation, subtle animations, and a responsive experience across devices.
+
+### Highlights
+
+* 🎮 Pixel-inspired visual design
+* 🌗 Dark and light themes
+* 🧑‍💻 Project and experience showcase
+* 📱 Responsive layout
+* ⚡ Fast static-site architecture
+* 🎯 Interactive navigation hub
+* 🎮 Built-in FPS aim trainer mini-game
+* ♿ Accessibility-conscious interactions
+* 🔍 SEO and Open Graph support
+* 📦 Optimized project images with AVIF/WebP
+
+## 🛠️ Tech Stack
+
+| Technology             | Purpose                              |
+| ---------------------- | ------------------------------------ |
+| **Astro 7**            | Static site framework                |
+| **TypeScript**         | Application logic and interactivity  |
+| **Tailwind CSS 4**     | Styling and responsive design        |
+| **Vanilla TypeScript** | Client-side interactions             |
+| **HTML & CSS**         | Semantic structure and visual system |
+
+### Typography
+
+* **Pixelify Sans** — Display / pixel-inspired typography
+* **Inter** — Body text
+* **JetBrains Mono** — Code and technical elements
+
+## 🚀 Getting Started
+
+Clone the repository and install the dependencies:
 
 ```bash
+git clone <repository-url>
+cd <repository-folder>
 npm install
-npm run dev       # http://localhost:4321
-npm run build     # type-checks (astro check), then builds to dist/
-npm run preview   # serve the production build
 ```
 
-## Editing content
+Start the development server:
 
-All content lives in `src/data/`. You never need to touch a component to update the site.
+```bash
+npm run dev
+```
 
-| What | File |
-| --- | --- |
-| Email, GitHub, LinkedIn | `src/data/socials.ts` |
-| Name, tagline, availability line, SEO text, placeholder visibility | `src/data/site.ts` |
-| Projects: copy, stack, status, links, screenshots | `src/data/projects.ts` |
-| Experience timeline | `src/data/experience.ts` |
-| Technical profile (shown inside About) | `src/data/skills.ts` |
-| Profile photo | put your portrait at `public/images/profile.jpg` (path set in `site.ts`) |
-| Navigation order | `src/data/navigation.ts` |
-| Canonical domain (SEO, sitemap, robots) | `SITE_URL` in `astro.config.mjs`, or the `SITE_URL` env var |
+The website will be available at:
 
-### Profile photo
+```text
+http://localhost:4321
+```
 
-The hero shows a framed placeholder until `public/images/profile.jpg` exists. Add the file, rebuild, and the photo replaces the placeholder automatically. A 4:5 portrait at least 800px wide works best.
+Build the production version:
 
-### Theme
+```bash
+npm run build
+```
 
-Both themes are defined in `src/styles/global.css` with one canonical set of variables:
+Preview the production build:
 
-- `--background`
-- `--surface`
-- `--surface-elevated`
-- `--text`
-- `--text-muted`
-- `--accent`
-- `--accent-glow`
-- `--border`
+```bash
+npm run preview
+```
 
-Dark (green accent) is the default. Light is a warm red theme.
-
-The display font is Pixelify Sans. Body text uses Inter, and code uses JetBrains Mono.
-
-### Mini game
-
-`/mini-game` is a canvas FPS aim trainer, written in plain TypeScript in `src/components/AimTrainer/`.
-
-- Personal bests are stored in the visitor's `localStorage`.
-- Phones and other touch devices see a short note instead of the arena.
-
-### Placeholders
-
-Anything not known yet is either `null` or a `YOUR_*` value:
-
-- **Links** still set to `YOUR_EMAIL`, `YOUR_LINKEDIN` and so on render as disabled buttons, never as broken links.
-- **Missing details**, such as experience dates and descriptions, render as dashed "to be added" slots.
-- To hide every placeholder slot at once (for example, before sharing the site publicly), set `showPlaceholders: false` in `src/data/site.ts`.
-
-### Project screenshots
-
-Put images in `src/assets/projects/<project>/` and reference them in `projects.ts` by path, for example `src: 'sellbytes/home.png'`. They are resized and converted to AVIF/WebP at build time.
-
-- A screenshot that exists in both themes can be listed twice with `theme: 'dark'` and `theme: 'light'`. The site shows the one that matches its own theme.
-- Projects without screenshots list `imagePlaceholders`. Remove an entry once its image is added.
-
-### Project status and technologies
-
-Every technology in a project's `stack` has a `status`:
-
-- `implemented` (the default)
-- `partial`
-- `planned`
-
-Planned and partial items are labelled as such everywhere they appear. Keep them honest: only mark something `implemented` when the code really has it. The `status` field accepts `In Development`, `Concept`, `Academic Project`, `Deployed` and `Design Project`.
-
-## Structure
+## 📁 Project Structure
 
 ```text
 src/
-├── components/        Page sections (Hero, Projects, About, Experience, Contact, …)
-│   ├── NavigationCore/  The glowing navigation core and its hub
-│   ├── ProfilePhoto/    Hero portrait frame (placeholder until the photo exists)
-│   ├── AimTrainer/      Mini game (canvas)
-│   ├── projects/      The four project showcase presentations
-│   ├── project-detail/  Case-study page building blocks
-│   ├── visuals/       Architecture diagrams, flow rails, ERD, phone mockup
-│   └── ui/            Buttons, chips, icons, frames, image helpers
-├── data/              ← all editable content
-├── layouts/Layout.astro   SEO, Open Graph, theme bootstrapping, fonts
-├── lib/               Small helpers (links, images, tech icons)
-├── pages/             index, projects/[slug], mini-game, 404, robots.txt
-├── scripts/site.ts    Scroll reveal, navigation core, theme transition, cursor + magnetic effects
-└── styles/global.css  Design tokens (dark + light), utilities, motion
+├── components/
+│   ├── NavigationCore/     # Interactive navigation hub
+│   ├── ProfilePhoto/       # Hero profile photo
+│   ├── AimTrainer/         # FPS aim trainer mini-game
+│   ├── projects/           # Project showcase sections
+│   ├── project-detail/     # Project case-study components
+│   ├── visuals/            # Diagrams and visual components
+│   └── ui/                 # Reusable UI components
+│
+├── data/                   # Portfolio content
+│
+├── layouts/
+│   └── Layout.astro        # Global layout, SEO and theme setup
+│
+├── lib/                    # Utility functions
+├── pages/                  # Website routes
+├── scripts/
+│   └── site.ts             # Client-side interactions
+└── styles/
+    └── global.css          # Design system and global styles
+
+public/
+└── images/                 # Public images and assets
 ```
 
-## Assets
+## ✏️ Updating the Portfolio
 
-- `public/og.png` is the 1200×630 social preview. It is rendered from `scripts/og/og.html`. Open that file in Chrome or Edge at 1200×630 and take a screenshot, or run headless Edge/Chrome with `--screenshot --window-size=1200,630`.
-- `node scripts/generate-icons.mjs` regenerates `favicon.ico`, `apple-touch-icon.png` and the manifest icons from `public/favicon.svg`.
-- Technology marks come from [Simple Icons](https://simpleicons.org) (CC0) and are stored as path data in `src/components/ui/tech-icons.ts`.
+Most portfolio content is separated from the UI and can be edited inside `src/data/`.
 
-## Accessibility and performance notes
+| Content                | File                     |
+| ---------------------- | ------------------------ |
+| Social links           | `src/data/socials.ts`    |
+| Site information & SEO | `src/data/site.ts`       |
+| Projects               | `src/data/projects.ts`   |
+| Experience             | `src/data/experience.ts` |
+| Technical profile      | `src/data/skills.ts`     |
+| Navigation             | `src/data/navigation.ts` |
 
-- The site uses semantic landmarks, a skip link and visible focus states. The navigation hub and the lightbox are native `<dialog>` elements, so they get focus trapping and Esc to close for free.
-- The cursor ring, tilt and magnetic effects only run with a fine pointer, and only when motion is allowed.
-- All motion respects `prefers-reduced-motion`.
-- Page transitions use native cross-document View Transitions, which add no JavaScript.
-- Fonts are self-hosted and preloaded, with metric-matched fallbacks to avoid layout shift.
+This makes it possible to update the portfolio without modifying the individual page components.
+
+## 🖼️ Profile Photo
+
+To add the profile photo displayed in the hero section, place your image at:
+
+```text
+public/images/profile.jpg
+```
+
+A **4:5 portrait image** with a width of at least **800px** is recommended.
+
+The portfolio automatically uses the image when it is available.
+
+## 🎨 Themes
+
+The portfolio supports both **dark and light themes**.
+
+The design system is controlled through CSS variables in:
+
+```text
+src/styles/global.css
+```
+
+Core design tokens include:
+
+```text
+--background
+--surface
+--surface-elevated
+--text
+--text-muted
+--accent
+--accent-glow
+--border
+```
+
+The default theme uses a dark interface with green accents, while the light theme uses a warmer visual palette.
+
+## 🎮 Mini Game
+
+The portfolio includes a small **FPS aim trainer** available at:
+
+```text
+/mini-game
+```
+
+It is built with plain TypeScript and HTML Canvas.
+
+Features include:
+
+* Target shooting
+* Score tracking
+* Personal bests
+* Local browser storage
+* Touch-device detection
+
+Personal best scores are stored locally in the visitor's browser using `localStorage`.
+
+## 📂 Adding Projects
+
+Project information is managed through:
+
+```text
+src/data/projects.ts
+```
+
+Project screenshots can be placed inside:
+
+```text
+src/assets/projects/<project>/
+```
+
+For example:
+
+```text
+src/assets/projects/sellbytes/home.png
+```
+
+The build process automatically optimizes supported project images for the website.
+
+Projects can also specify their current status, such as:
+
+* `Deployed`
+* `In Development`
+* `Academic Project`
+* `Concept`
+* `Design Project`
+
+Technology entries can also indicate whether a technology is:
+
+* `implemented`
+* `partial`
+* `planned`
+
+This helps keep the portfolio accurate about what has actually been built.
+
+## 📱 Responsive & Accessible
+
+The portfolio was built with accessibility and performance in mind.
+
+It includes:
+
+* Semantic HTML landmarks
+* Skip navigation
+* Visible focus states
+* Keyboard-friendly dialogs
+* Reduced-motion support
+* Responsive layouts
+* Fine-pointer detection for cursor effects
+* Native browser dialogs
+* Optimized images
+* Self-hosted fonts
+
+Animations and interactive effects are reduced or disabled when the visitor has enabled `prefers-reduced-motion`.
+
+## ⚡ Performance
+
+The site is built as a lightweight static website using Astro.
+
+Client-side JavaScript is kept intentionally small, with most of the site remaining functional without JavaScript.
+
+Images are optimized during the build process, and fonts are self-hosted to improve loading performance and reduce layout shifts.
+
+## 📸 Social Preview
+
+The repository includes an Open Graph image at:
+
+```text
+public/og.png
+```
+
+This image is used when the portfolio is shared on platforms that support Open Graph previews.
+
+## 📄 License
+
+This repository contains the source code for my personal portfolio.
+
+You are welcome to explore the code and use it as a reference for learning and inspiration. Please do not present the portfolio, branding, personal information, or project work as your own.
+
+---
+
+### Built by Enzo Monzon
+
+**Computer Science Student · Software Developer · Builder**
+
+[GitHub](YOUR_GITHUB) · [LinkedIn](YOUR_LINKEDIN) · [Portfolio](YOUR_PORTFOLIO)
