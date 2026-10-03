@@ -259,4 +259,4 @@ You are welcome to explore the code and use it as a reference for learning and i
 
 **Computer Science Student · Software Developer · Builder**
 
-[GitHub](YOUR_GITHUB) · [LinkedIn](YOUR_LINKEDIN) · [Portfolio](YOUR_PORTFOLIO)
+
