@@ -9,6 +9,8 @@ import Icon from '@/components/ui/Icon.astro';
 import SectionHeader from '@/components/ui/SectionHeader.astro';
 import TechChip from '@/components/ui/TechChip.astro';
 import mascot from '@/assets/brand/cinnabyte-mascot.png';
+import awsHaribon from '@/assets/brand/aws-haribon.png';
+import vTechSolutions from '@/assets/brand/v-tech-solutions.png';
 import { experience } from '@/data/experience';
 import { getProject, type Project } from '@/data/projects';
 import { site } from '@/data/site';
@@ -96,6 +98,10 @@ const entries = experience.map((entry) => {
                       <div class:list={['xp-logo', entry.logo && 'is-image']}>
                         {entry.logo === 'cinnabyte' ? (
                           <Image src={mascot} alt="Cinnabyte" width={44} densities={[1, 2, 3]} class="xp-mascot" />
+                        ) : entry.logo === 'aws-haribon' ? (
+                          <Image src={awsHaribon} alt="AWS Student Builder Group — Haribon" width={48} densities={[1, 2, 3]} class="xp-brand-image" />
+                        ) : entry.logo === 'v-tech-solutions' ? (
+                          <Image src={vTechSolutions} alt="V-Tech Solutions" width={48} densities={[1, 2, 3]} class="xp-brand-image" />
                         ) : (
                           <span class="xp-monogram" aria-hidden="true">
                             {entry.monogram}
@@ -473,6 +479,13 @@ const entries = experience.map((entry) => {
 
   .xp-logo.is-image {
     background-image: none;
+  }
+
+  .xp-brand-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: inherit;
   }
 
   /* Rendered at its generated size (44px, 1x/2x/3x) so pixels stay crisp; the

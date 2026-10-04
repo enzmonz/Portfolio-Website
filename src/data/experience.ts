@@ -24,8 +24,8 @@ export interface ExperienceEntry {
   techPlaceholder?: string;
   /** Project slugs (from projects.ts) shown as evidence for this role. */
   projects?: string[];
-  /** Brand mark: 'cinnabyte' uses the Cinnabyte mascot; otherwise a monogram is drawn. */
-  logo?: 'cinnabyte';
+  /** Brand mark; otherwise a monogram is drawn. */
+  logo?: 'cinnabyte' | 'aws-haribon' | 'v-tech-solutions';
   monogram: string;
   url?: string | null;
 }
@@ -59,6 +59,7 @@ export const experience: ExperienceEntry[] = [
     summaryPlaceholder: 'Details about the AI - Machine Learning Associate role to be added',
     details: [],
     tech: ['Machine Learning'],
+    logo: 'aws-haribon',
     monogram: 'AI',
     url: null,
   },
@@ -75,6 +76,7 @@ export const experience: ExperienceEntry[] = [
       'Automated data processing and routine tasks with Python.',
     ],
     tech: ['Java', 'Python'],
+    logo: 'v-tech-solutions',
     monogram: 'VT',
     url: null,
   },

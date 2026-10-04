@@ -38,7 +38,6 @@ const headingId = cardHeadingId(project);
       project.schema && (
         <div class="sc-erd" data-reveal style="--d: 1">
           <SchemaDiagram schema={project.schema} variant="full" />
-          <p class="sc-erd-note">Simplified entity overview · key columns only</p>
         </div>
       )
     }
@@ -106,18 +105,9 @@ const headingId = cardHeadingId(project);
   /* ERD                                                               */
   /* ---------------------------------------------------------------- */
 
-  /* The home page has no slot for the "added below" note; a short one replaces it. */
+  /* Hide the schema caption on the homepage. */
   .sc-erd :global(.erd--full > .caption) {
     display: none;
-  }
-
-  .sc-erd-note {
-    margin-top: 0.875rem;
-    color: var(--fg-subtle);
-    font-family: var(--font-mono);
-    font-size: 0.6875rem;
-    line-height: 1rem;
-    letter-spacing: 0.02em;
   }
 
   .sc-erd :global(.frame) {

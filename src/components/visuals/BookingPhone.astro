@@ -24,9 +24,10 @@ interface Props {
   size?: 'md' | 'lg';
   class?: string;
   idPrefix?: string;
+  showCaption?: boolean;
 }
 
-const { interactive = true, size = 'md', class: className, idPrefix = 'booking' } = Astro.props;
+const { interactive = true, size = 'md', class: className, idPrefix = 'booking', showCaption = true } = Astro.props;
 
 /** Auto-advance interval; also the duration of the tab progress bar. */
 const INTERVAL_MS = 3200;
@@ -130,7 +131,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
     )
   }
 
-  <figcaption class="bp-caption">Interface recreation · based on the app’s screens</figcaption>
+  {showCaption && <figcaption class="bp-caption">Interface recreation · based on the app’s screens</figcaption>}
 </figure>
 
 <style>
